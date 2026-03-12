@@ -2,9 +2,7 @@
 
 
 ## Setup
-
-TODO: explain how to get OAuth setup
-Make sure that (one of) the redirect URLs is localhost:8084.
+See [SETUP.md](SETUP.md)
 
 ## Running
 
