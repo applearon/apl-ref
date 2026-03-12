@@ -15,6 +15,7 @@ Make sure that (one of) the redirect URLs is localhost:8084.
 ## Running
 
 ```
+npm i
 npm start
 ```
 

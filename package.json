@@ -1,6 +1,6 @@
 {
   "name": "apl_ref",
-  "version": "1.0.0",
+  "version": "0.1.0",
   "description": "APL's Ref Client",
   "main": "main.js",
   "scripts": {

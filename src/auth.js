@@ -1,8 +1,11 @@
+const { app } = require('electron')
 const fs = require('fs')
 const path = require('path')
 
-const CONFIG_PATH = path.join(__dirname, '..', 'config.json')
-const TOKEN_PATH = path.join(__dirname, '..', 'token.json')
+const userDataPath = app.getPath('userData');
+
+const CONFIG_PATH = path.join(userDataPath, 'config.json')
+const TOKEN_PATH = path.join(userDataPath, 'token.json')
 
 // This URI must match what is registered in the osu! OAuth app settings.
 // We never actually listen on this port — Electron intercepts the redirect
