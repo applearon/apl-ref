@@ -6,6 +6,7 @@ const COMMANDS = {
     CloseRoom(roomId){return this.connection.invoke("CloseRoom", roomId)},
     InvitePlayer(roomId,userId){return this.connection.invoke("InvitePlayer", roomId,userId)},
     KickPlayer(roomId,userId){return this.connection.invoke("KickPlayer", roomId,userId)},
+    BanUser(roomId,bannedUserId){return this.connection.invoke("BanUser", roomId,bannedUserId)},
     AddReferee(roomId,targetUserId){return this.connection.invoke("AddReferee", roomId,targetUserId)},
     RemoveReferee(roomId,targetUserId){return this.connection.invoke("RemoveReferee", roomId,targetUserId)},
     ChangeRoomSettings(roomId,request){return this.connection.invoke("ChangeRoomSettings", roomId,request)},
