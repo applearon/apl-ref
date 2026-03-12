@@ -22,7 +22,7 @@ if (savedTheme === 'light') {
 updateThemeIcon()
 
 
-// Stored Data
+// Stored Data TODO: make this into a proper class
 let players = {};
 let other_players = {}; // removes calling too much, should be partially(?) replaced with referee list
 let playlistItems = {};
@@ -30,10 +30,14 @@ let chat_channel_id = ""
 let connected = false;
 
 let editing_playlist_item = 0;
+let password = ""
+let room_name = ""
 
 // ── UI helpers ──────────────────────────────────────────────────────────────
 
 function showSettingsDropdown() {
+  document.getElementById('settings-name').value = room_name
+  document.getElementById('settings-password').value = password
   document.getElementById('settings-dropdown').classList.add('visible')
 }
 
@@ -99,8 +103,10 @@ function showRoomCreation() {
 }
 
 
-function showRoomActions(roomId, channelId, name) {
+function showRoomActions(roomId, channelId, name, rm_password) {
   currentRoomId = roomId
+  password = rm_password;
+  room_name = name;
   document.getElementById('room-actions').classList.remove('hidden')
   document.getElementById('room-badge').classList.add('visible')
   document.getElementById('room-chat-badge').classList.add('visible')
@@ -493,7 +499,7 @@ document.getElementById('make-room-btn').addEventListener('click', async () => {
   setResult('make-room-result', result)
   console.log(result)
   if (result.success && result.data) {
-    showRoomActions(result.data.room_id, result.data.chat_channel_id, result.data.name)
+    showRoomActions(result.data.room_id, result.data.chat_channel_id, result.data.name, result.data.password)
     hideRoomCreation()
     osu.StartMatch(currentRoomId, {}) // Jank as hell but this should properly give the Playlist info I need
     connected = true
@@ -507,7 +513,7 @@ document.getElementById('join-room-btn').addEventListener('click', async () => {
   const result = await osu.JoinRoom(roomId)
   setResult('join-room-result', result)
   if (result.success) {
-    showRoomActions(roomId, result.data.chat_channel_id, result.data.name)
+    showRoomActions(roomId, result.data.chat_channel_id, result.data.name, result.data.password)
   }
 })
 
@@ -629,6 +635,8 @@ window.api.onUserKicked(info => {
 })
 window.api.onRoomSettingsChanged(info => {
     logEvent('RoomSettingsChanged', info);
+    room_name = info.name
+    password = info.password
     document.getElementById('room-name').textContent = info.name
     document.getElementById('cur-match-type').textContent = info.type
 })
