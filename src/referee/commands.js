@@ -1,0 +1,21 @@
+const COMMANDS = {
+    Ping(message){return this.connection.invoke("Ping", message)},
+    MakeRoom(request){return this.connection.invoke("MakeRoom", request)},
+    JoinRoom(roomId){return this.connection.invoke("JoinRoom", roomId)},
+    LeaveRoom(roomId){return this.connection.invoke("LeaveRoom", roomId)},
+    CloseRoom(roomId){return this.connection.invoke("CloseRoom", roomId)},
+    InvitePlayer(roomId,userId){return this.connection.invoke("InvitePlayer", roomId,userId)},
+    KickPlayer(roomId,userId){return this.connection.invoke("KickPlayer", roomId,userId)},
+    AddReferee(roomId,targetUserId){return this.connection.invoke("AddReferee", roomId,targetUserId)},
+    RemoveReferee(roomId,targetUserId){return this.connection.invoke("RemoveReferee", roomId,targetUserId)},
+    ChangeRoomSettings(roomId,request){return this.connection.invoke("ChangeRoomSettings", roomId,request)},
+    EditCurrentPlaylistItem(roomId,request){return this.connection.invoke("EditCurrentPlaylistItem", roomId,request)},
+    AddPlaylistItem(roomId,request){return this.connection.invoke("AddPlaylistItem", roomId,request)},
+    EditPlaylistItem(roomId,request){return this.connection.invoke("EditPlaylistItem", roomId,request)},
+    RemovePlaylistItem(roomId,request){return this.connection.invoke("RemovePlaylistItem", roomId,request)},
+    MoveUser(roomId,request){return this.connection.invoke("MoveUser", roomId,request)},
+    StartMatch(roomId,request){return this.connection.invoke("StartMatch", roomId,request)},
+    StopMatchCountdown(roomId){return this.connection.invoke("StopMatchCountdown", roomId)},
+    AbortMatch(roomId){return this.connection.invoke("AbortMatch", roomId)},
+}
+module.exports = { COMMANDS }

@@ -1,0 +1,35 @@
+{
+  "name": "apl_ref",
+  "version": "1.0.0",
+  "description": "APL's Ref Client",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron-forge start",
+    "make": "electron-forge make",
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "package": "electron-forge package"
+  },
+  "author": "applearon",
+  "license": "MIT",
+  "devDependencies": {
+    "@electron-forge/cli": "^7.11.1",
+    "@electron-forge/maker-deb": "^7.11.1",
+    "@electron-forge/maker-rpm": "^7.11.1",
+    "@electron-forge/maker-squirrel": "^7.11.1",
+    "@electron-forge/maker-zip": "^7.11.1",
+    "@electron-forge/plugin-auto-unpack-natives": "^7.11.1",
+    "@electron-forge/plugin-fuses": "^7.11.1",
+    "@electron/fuses": "^1.8.0",
+    "autoprefixer": "^10.4.27",
+    "electron": "^40.7.0",
+    "electron-prebuilt-compile": "^8.2.0",
+    "postcss": "^8.5.8",
+    "tailwindcss": "^4.2.1"
+  },
+  "dependencies": {
+    "@microsoft/signalr": "^10.0.0",
+    "@tailwindcss/cli": "^4.2.1",
+    "electron-squirrel-startup": "^1.0.1",
+    "ws": "^8.19.0"
+  }
+}
