@@ -615,6 +615,20 @@ document.getElementById('ping-btn').addEventListener('click', async () => {
   setResult('ping-result', result)
 })
 
+// chat parsing
+function commandHandler(username, message) {
+    const commands = {
+        "!roll": () => {
+            const max = 100;
+            const roll = Math.floor(Math.random() * max) + 1; // add one so we're not indexing by 0
+            window.api.api.SendMessage(chat_channel_id, `${username} has rolled ${roll}.`)
+        }
+    }
+    if (commands[message.trim()] != undefined) {
+        commands[message.trim()]();
+    }
+}
+
 // ── Event listeners ────────────────────────────────────────────────────────
 window.api.onPong(msg => logEvent('Pong', msg))
 window.api.onUserJoined(async info => {
@@ -739,6 +753,7 @@ window.api.api.onChatMessage(async buffer => {
                 other_players[msg.sender_id] = user
                 addChatMsg(msg.content, user.username, user.avatar_url)
             }
+            commandHandler(user.username, msg.content)
         } //else {
           //  console.log(msg.sender_id, msg.content)
           //}
