@@ -1,6 +1,9 @@
 # apl's lazer ref client
 
 
+## Download
+[Releases](https://github.com/applearon/apl-ref/releases/latest)
+
 ## Setup
 See [SETUP.md](SETUP.md)
 
