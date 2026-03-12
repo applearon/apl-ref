@@ -133,7 +133,8 @@ function addPlayer(user_id, player_status, name, team) {
     clone.getElementById("player-mods").textContent = "N/A"
     teamSpan.addEventListener("click", async () => {
         // TODO change to if it's head-to-head
-        //if(teamSpan.classList.contains("team-none")) return;
+        // done, untested
+        if(teamSpan.classList.contains("team-none")) return;
         const result = await osu.MoveUser(currentRoomId, {
             user_id,
             team: teamSpan.classList.contains("team-red") ? "red" : "blue"
@@ -257,16 +258,74 @@ function refreshPlaylistItems() {
 }
 
 // Scores
-function addScore(username, score) {
-    const template = document.getElementById("score-team-blue")
+function addSoloScore(username, score) {
+    const template = document.getElementById("player-score")
     const clone = template.content.cloneNode(true);
     
-    clone.querySelector('.score-team-name').textContent = username
-    clone.querySelector('.score-team-total').textContent = score
-
-    document.getElementById("scores-container").appendChild(clone)
+    clone.querySelector('.score-player-name').textContent = username
+    clone.querySelector('.score-player-score').textContent = score
+    
+    document.querySelector(".score-players-solo").appendChild(clone)
 }
 
+function addTeamSoloScore(username, score, team) {
+    const x = team == "red" ? 0 : 1
+    const team_div = document.querySelectorAll(".score")[x].querySelector('.score-players')
+    const template = document.getElementById("player-score")
+    const clone = template.content.cloneNode(true);
+    
+    clone.querySelector('.score-player-name').textContent = username
+    clone.querySelector('.score-player-score').textContent = score
+    team_div.appendChild(clone)
+}
+
+function scoreMode(head_to_head) {
+    const teams = document.querySelectorAll(".score")
+    if (head_to_head) {
+        for (team of teams) {
+            team.classList.remove("visible")
+        }
+    } else {
+        for (team of teams) {
+            team.classList.add("visible")
+        }
+    }
+}
+
+function removeAllScores() {
+    document.querySelector(".score-players-solo").innerHTML = ""
+    for (team of team_div = document.querySelectorAll(".score")) {
+        team.querySelector('.score-players').innerHTML = ""
+    }
+}
+
+async function addScore(room_id, playlist_id) {
+    removeAllScores()
+    const head_to_head = document.getElementById('cur-match-type').textContent == "head_to_head"
+    scoreMode(head_to_head);
+    //const addFunc = head_to_head ? addSoloScore : addTeamSoloScore
+
+    const scores = (await window.api.api.GetScores(room_id, playlist_id)).data
+    console.log(scores)
+    let red_score = 0
+    let blue_score = 0
+    for (score of scores.scores) {
+        if (head_to_head) {
+            addSoloScore(score.user.username, score.total_score)
+        } else {
+            const team = document.querySelector(`[class~="${score.user_id}"]`).querySelector(".player-team").classList.contains('team-red') ? 'red' : 'blue'
+            if (team == 'red') red_score += score.total_score
+            if (team == 'blue') blue_score += score.total_score
+            addTeamSoloScore(score.user.username, score.total_score, team)
+        }
+    }
+    if (!head_to_head) {
+        const teams = document.querySelectorAll(".score")
+        teams[0].querySelector('.score-team-total').textContent = red_score
+        teams[1].querySelector('.score-team-total').textContent = blue_score
+    }
+    
+}
 
 function int(id) { return parseInt(document.getElementById(id).value, 10) }
 function str(id) { return document.getElementById(id).value.trim() }
@@ -651,6 +710,7 @@ window.api.onMatchAborted(info => {
 window.api.onMatchCompleted(info => {
     logEvent('MatchCompleted', info)
     document.getElementById('cur-match-status').textContent = "Idle"
+    addScore(info.room_id, info.playlist_item_id)
 })
 
 window.api.api.onChatMessage(async buffer => {
