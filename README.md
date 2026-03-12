@@ -3,13 +3,7 @@
 
 ## Setup
 
-create a `config.json` file:
-```
-{
-  "client_id": "46401",
-  "client_secret": "yourClientSecretHere"
-}
-```
+TODO: explain how to get OAuth setup
 Make sure that (one of) the redirect URLs is localhost:8084.
 
 ## Running
@@ -18,6 +12,12 @@ Make sure that (one of) the redirect URLs is localhost:8084.
 npm i
 npm start
 ```
+
+## Compile
+```
+npm run make -- --platform=win32
+```
+You can change or omit `-- --platform=win32` depending on what platform you build for. By default, it will build as a bundled zip.
 
 For editing, run this to keep the tailwind css up to date:
 ```
