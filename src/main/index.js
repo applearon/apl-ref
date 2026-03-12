@@ -1,4 +1,4 @@
-const { app, BrowserWindow } = require('electron')
+const { app, BrowserWindow, shell } = require('electron')
 const path = require('path')
 const { RefereeClient, SPECTATOR_SERVER_URL } = require('../referee')
 const { setupIpcHandlers, setupWSEvents } = require('./ipc')
@@ -50,6 +50,10 @@ function createConfigPopup(authUrl) {
   })
 
   win.loadFile(path.join(__dirname, '..', 'renderer', 'config.html'))
+  win.webContents.setWindowOpenHandler(({ url }) => {
+      shell.openExternal(url);
+      return { action: 'deny' };
+    });
   return win
 }
 

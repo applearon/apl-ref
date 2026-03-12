@@ -3,3 +3,4 @@ config.json
 token.json
 scripts/IRefereeHubServer.cs
 out/
+src/renderer/css/tailwind.css
