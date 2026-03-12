@@ -38,6 +38,21 @@ function createLoginWindow(authUrl) {
   return win
 }
 
+function createConfigPopup(authUrl) {
+  const win = new BrowserWindow({
+    width: 600,
+    height: 700,
+    webPreferences: {
+      preload: path.join(__dirname, '..', '..', 'preload.js'),
+      contextIsolation: true,
+      nodeIntegration: false
+    }
+  })
+
+  win.loadFile(path.join(__dirname, '..', 'renderer', 'config.html'))
+  return win
+}
+
 function sendToRenderer(channel, data) {
   if (mainWindow && !mainWindow.isDestroyed()) {
     mainWindow.webContents.send(channel, data)
@@ -106,7 +121,7 @@ function start() {
   //app.commandLine.appendSwitch('enable-features', 'OverlayScrollbar')
   app.whenReady().then(async () => {
     try {
-      const accessToken = await getAccessToken(createLoginWindow)
+      const accessToken = await getAccessToken(createLoginWindow, createConfigPopup)
       await initializeApp(accessToken)
     } catch (err) {
       console.error('Failed to authenticate:', err)

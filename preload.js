@@ -17,6 +17,9 @@ contextBridge.exposeInMainWorld('api', {
     GetBeatmap: (beatmap_id) => ipcRenderer.invoke('GetBeatmap', beatmap_id),
     GetScores: (room_id, playlist_id) => ipcRenderer.invoke('GetScores', room_id, playlist_id),
   },
+  config: {
+      SendConfig: (client_id, client_secret) => ipcRenderer.invoke('SendConfig', client_id, client_secret),
+  },
   onPong: (callback) => {
     ipcRenderer.on('pong-received', (event, message) => callback(message))
   },
