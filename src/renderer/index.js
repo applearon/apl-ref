@@ -84,12 +84,27 @@ function setResult(id, result) {
 }
 
 function logEvent(name, data) {
+  console.log(name, data)
   const log = document.getElementById('event-log')
   const placeholder = log.querySelector('.event-placeholder')
   if (placeholder) placeholder.remove()
   const entry = document.createElement('div')
   entry.className = 'event-entry'
-  entry.textContent = '[' + new Date().toLocaleTimeString() + '] ' + name + ': ' + JSON.stringify(data)
+  const time = document.createElement('div');
+  time.textContent = name + ': [' + new Date().toLocaleTimeString() + ']' 
+  const logData = document.createElement('div');
+  delete data.room_id
+  if (typeof data == 'string') {
+    logData.textContent = data
+  } else {
+      for(const [key, value] of Object.entries(data)) {
+        const x = document.createElement('div');
+        x.textContent = key + ": " + (typeof value == 'string' ? value : JSON.stringify(value, null, ' '))
+        logData.append(x)
+      }
+  }
+  entry.append(time)
+  entry.append(logData)
   log.prepend(entry)
 }
 
@@ -148,8 +163,10 @@ function addPlayer(user_id, player_status, name, team) {
         console.log(result)
     })
     teamSpan.style.cursor = 'pointer';
-    clone.querySelector(".player-item").classList.add(user_id)
+
+    clone.querySelector(".player-item").dataset.user_id =user_id
     
+
     const kickBtn = clone.querySelector(".kick-btn")
     kickBtn.addEventListener("click", async () => {
         const confirmed = await confirm("Kick Player", "Are you sure you want to kick " + name + "?")
@@ -237,7 +254,8 @@ async function addPlaylistItem(playlist_id, ruleset_id, beatmap_id, required_mod
 }
 
 function removePlayer(user_id) {
-    document.querySelector(`[class~="${user_id}"]`).remove()
+    document.querySelector(`[data-user_id="${user_id}"]`).remove()
+    return delete players[user_id]
 }
 
 function removePlaylistItem(playlist_id) {
@@ -689,7 +707,7 @@ window.api.onPlaylistItemRemoved(info => {
 window.api.onUserStatusChanged(info => {
     logEvent('UserStatusChanged', info)
     const user_id = info.user_id
-    const playerDiv = document.querySelector(`[class~="${user_id}"]`)
+    const playerDiv = document.querySelector(`[data-user_id="${user_id}"]`)
     playerDiv.querySelector(".player-status").textContent = info.status
 })
 
@@ -697,7 +715,7 @@ window.api.onUserModsChanged(info => {
     logEvent('UserModsChanged', info)
     const mods = info.mods
     const user_id = info.user_id
-    const playerDiv = document.querySelector(`[class~="${user_id}"]`)
+    const playerDiv = document.querySelector(`[data-user_id="${user_id}"]`)
     playerDiv.getElementById("player-mods").textContent = mods.map(item => item.acronym).join(" ");
 })
 window.api.onUserStyleChanged(info => {
@@ -709,7 +727,7 @@ window.api.onUserStyleChanged(info => {
 window.api.onUserTeamChanged(info => {
     logEvent('UserTeamChanged', info)
     const user_id = info.user_id;
-    const user_UI = document.querySelector(`[class~="${user_id}"]`).querySelector(".player-team")
+    const user_UI = document.querySelector(`[data-user_id="${user_id}"]`).querySelector(".player-team")
     user_UI.classList.remove(["team-none", "team-red", "team-blue"])
     user_UI.classList.add("team-" + info.team)
 })

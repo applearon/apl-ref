@@ -13,7 +13,7 @@
   <body class="scrollbar-hover bg-gray-100 dark:bg-gray-900 text-gray-800 dark:text-gray-100">
 
     <!-- Left Sidebar -->
-    <div id="room-sidebar" class="scrollbar-hover">
+    <div id="room-sidebar" class="scrollbar-hover bg-gray-200 dark:bg-gray-800 text-gray-800 dark:text-gray-200">
       <div class="sidebar-section">
         <h3 class="sidebar-title">
           Players
@@ -69,6 +69,18 @@
       </div>
     </div>
 
+    <!-- Rightbar -->
+    <div id="room-rightbar" class="scrollbar-hover bg-gray-200 dark:bg-gray-800 text-gray-800 dark:text-gray-200">
+      <div class="sidebar-section">
+        <h3 class="sidebar-title">User Mods</h3>
+      </div>
+      <div class="sidebar-section">
+          <h3 class="sidebar-title">Events</h3>
+          <div class="scrollbar-hover event-log" id="event-log">
+            <div class="event-placeholder">No events yet…</div>
+          </div>
+      </div>
+    </div>
     <!-- Navbar -->
     <div id="navbar">
       <h5 id="room-name"  class="text-base font-normal whitespace-nowrap m-0">APL Ref Client</h5>
@@ -310,14 +322,6 @@
         </div>
       </div>
 
-        <!-- Event Log -->
-        <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-5 mb-4">
-          <h2 class="text-lg font-medium mb-3">Events</h2>
-          <div class="scrollbar-hover event-log" id="event-log">
-            <div class="event-placeholder">No events yet…</div>
-          </div>
-        </div>
-
       </div><!-- /#room-actions -->
 
       <!-- Debug -->
@@ -336,7 +340,7 @@
         <div class="flex-1">
           <div class="flex items-center gap-2">
             <span class="player-name"></span>
-            <span class="player-status">-</span>
+            <span class="player-status bg-gray-200 dark:bg-gray-600 text-gray-800 dark:text-gray-100">-</span>
             <button class="kick-btn">Kick</button>
           </div>
           <div id="player-mods" class="player-mods text-xs text-gray-500 mb-0"></div>

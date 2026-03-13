@@ -1,6 +1,10 @@
 @import "tailwindcss";
 @custom-variant dark (&:where(.dark, .dark *));
-/* hide scrollbar by default */
+
+:root {
+  --rightbar-width: 480px;
+}
+
 .scrollbar-hover::-webkit-scrollbar {
   width: 8px;
   height: 8px;
@@ -126,7 +130,7 @@
 }
 
 .event-log {
-  max-height: 200px;
+  max-height: 50vh;
   overflow-y: auto;
   font-size: 0.78rem;
   font-family: monospace;
@@ -243,13 +247,11 @@
   left: 0;
   width: 280px;
   height: calc(100vh - 56px);
-  background: #fff;
   border-right: 1px solid #e5e7eb;
   overflow-y: auto;
   z-index: 100;
 }
 .dark #room-sidebar {
-  background: #1f2937;
   border-color: #374151;
 }
 
@@ -266,12 +268,25 @@
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.05em;
-  color: #6b7280;
   margin-bottom: 12px;
 }
-.dark .sidebar-title {
-  color: #9ca3af;
+
+#room-rightbar {
+  position: fixed;
+  top: 56px;
+  right: 0;
+  width: var(--rightbar-width);;
+  height: calc(100vh - 56px);
+  background: #fff;
+  border-left: 1px solid #e5e7eb;
+  overflow-y: auto;
+  z-index: 100;
 }
+.dark #room-rightbar {
+  background: #1f2937;
+  border-color: #374151;
+}
+
 
 .player-list {
   display: flex;
@@ -330,7 +345,6 @@
   border-radius: 4px;
   text-transform: uppercase;
   background: #e5e7eb;
-  color: #6b7280;
 }
 
 .dark .player-status {
@@ -350,16 +364,6 @@
 .kick-btn:hover {
   background: #dc2626;
 }
-
-.team-blue {
-  background: #3b82f6;
-  color: #fff;
-}
-.team-red {
-  background: #ef4444;
-  color: #fff;
-}
-*/
 
 .playlist-current {
   display: flex;
@@ -453,7 +457,8 @@
 
 .container.with-sidebar {
   margin-left: 280px;
-  max-width: calc(100% - 280px);
+  margin-right: var(--rightbar-width);
+  max-width: calc(100% - 280px - var(--rightbar-width));
 }
 
 .score {
