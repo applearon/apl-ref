@@ -9,9 +9,9 @@ UI fixes:
 - Add mp link button
 - See if you can give players host (add "Add/Remove Referee" button too)
 - Add right sidebar (includes probably prettified events, maybe have user mod settings, and/or have full names for mods selected)
-- HOW DO YOU REMOVE THE SCROLL BARS THEY'RE SO UGLY ughhhhhhhh
 - Remove ping button probably (add "Debug mode" in settings?)
 - Make stuff resize properly to smaller window sizes
+- Playlist Items (and players?) should be in their own thing for scrolling
 
 Backend fixes:
 - Replace the redundant & hardcoded S->C methods with something that can be easily genMethods-ed
@@ -24,4 +24,4 @@ New Features:
 Bugs:
 - Investigate broken chat (& add more error handling)
 - Players tab is broken (Not removing players when they're gone)
-
+- Calling GetBeatmap more than needs to happen (ie PlaylistItemEdit or whatever but the beatmap_id stays the same)

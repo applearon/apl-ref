@@ -1,5 +1,16 @@
 @import "tailwindcss";
 @custom-variant dark (&:where(.dark, .dark *));
+/* hide scrollbar by default */
+.scrollbar-hover::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+.scrollbar-hover::-webkit-scrollbar-thumb {
+  background: rgba(100,100,100,0.5);
+  border-radius: 4px;
+}
+
 #navbar {
   position: fixed;
   top: 0;
