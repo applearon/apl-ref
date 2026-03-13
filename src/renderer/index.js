@@ -126,7 +126,14 @@ function showRoomActions(roomId, channelId, name, rm_password) {
   document.getElementById('room-badge').classList.add('visible')
   document.getElementById('room-chat-badge').classList.add('visible')
   document.getElementById('navbar-room-controls').classList.add('visible')
-  document.getElementById('room-info-id').textContent = roomId
+  document.getElementById('room-badge').addEventListener('click', () => {
+    try {
+        navigator.clipboard.writeText("https://osu.ppy.sh/multiplayer/rooms/" + roomId)
+        showToast("Copied to clipboard!")
+    } catch {
+        showToast("Failed to copy. idk what happened")
+    }
+  })
   document.getElementById('room-chat-id').textContent = channelId
   document.getElementById('room-name').textContent = name
 
@@ -140,6 +147,13 @@ function hideRoomActions() {
   document.getElementById('room-info-id').textContent = ''
   document.getElementById('room-chat-id').textContent = ''
   document.getElementById('room-name').textContent = "APL Ref Client"
+}
+
+function showToast(message, duration = 3000) {
+     const toast = document.getElementById('toast')
+     toast.textContent = message
+     toast.classList.remove('hidden')
+     setTimeout(() => toast.classList.add('hidden'), duration)
 }
 
 function addPlayer(user_id, player_status, name, team) {
