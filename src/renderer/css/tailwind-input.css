@@ -132,11 +132,13 @@
 
 .event-log {
   max-height: 50vh;
+  height: 50vh;
   overflow-y: auto;
   font-size: 0.78rem;
   font-family: monospace;
   border-radius: 4px;
   padding: 6px 8px;
+  display: full;
 }
 .event-entry { padding: 2px 0; border-bottom: 1px solid; border-color: inherit; }
 .event-placeholder { font-style: italic; }
