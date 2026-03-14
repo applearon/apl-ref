@@ -5,7 +5,7 @@ UI fixes:
 - Add Ban User to the UI (make sure to wait until it's actually in prod though..)
 
 - See if you can give players host (add "Add/Remove Referee" button too (done, untested))
-- Add right sidebar (includes probably prettified events, maybe have user mod settings, and/or have full names for mods selected)
+- Add add user mod settings & have full names for mods selected to rightbar
 - Remove ping button probably (add "Debug mode" in settings?)
 - Make stuff resize properly to smaller window sizes
 - Playlist Items (and players?) should be in their own thing for scrolling
@@ -15,7 +15,7 @@ Backend fixes:
 
 New Features:
 - Console mode/section for !mp style reffing
-- Referee Invited flow to join up
+- Referee Invited popup to join up
 
 
 Bugs:

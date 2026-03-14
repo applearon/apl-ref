@@ -33,6 +33,25 @@ let editing_playlist_item = 0;
 let password = ""
 let room_name = ""
 
+
+// Console mode logic TODO
+function cmdRunner(cmd, ...args) {
+    // "Ping", "MakeRoom", "JoinRoom", "LeaveRoom", "CloseRoom", "InvitePlayer", "KickPlayer", "BanUser", "AddReferee", "RemoveReferee", "ChangeRoomSettings", "EditCurrentPlaylistItem", "AddPlaylistItem", "EditPlaylistItem", "RemovePlaylistItem", "MoveUser", "StartMatch", "StopMatchCountdown", "AbortMatch"
+    const map = {
+        "set": {"ChangeRoomSettings": {name: null, password: null, head_to_head: args[0]}},
+        "start": {"StartMatch": {countdown: args[0]}},
+        "abort": {"AbortMatch": {}},
+        "team": {"MoveCustom": {user_id: idFromUsername(args[0]), team: args[0]}, custom: true},
+        "map": {"EditCurrentPlaylistItem": {beatmap_id: "_0", ruleset_id: "_1"}},
+        "mods": {"EditCustom": {mods: args}}, // i have no idea what to do for allowed mods
+        "kick": {},
+        "ban": {},
+        "password": {},
+        "addref": {},
+    }
+    // in da loop if undefined then assume it can be skipped? or maybe most of them can just be okay with null i should double check
+}
+
 // ── UI helpers ──────────────────────────────────────────────────────────────
 
 function showSettingsDropdown() {
@@ -108,6 +127,17 @@ function logEvent(name, data) {
   log.prepend(entry)
 }
 
+
+function idFromUsername(username) {
+    let user = Object.keys(players).find(key => players[key].username == username)
+    if (user == undefined) user = Object.keys(other_players).find(key => other_players[key].username == username)
+    if (user != undefined) {
+        return user;
+    } else {
+        console.log("failed to grab player idk what you just did")
+        return -1;
+    }
+}
 
 function hideRoomCreation() {
     document.getElementById('room-setup').classList.add('hidden')
