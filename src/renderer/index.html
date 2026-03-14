@@ -82,10 +82,9 @@
       </div>
     </div>
     <!-- Navbar -->
-           <div id="toast" class="hidden fixed top-10 left-4 px-4 py-2 rounded shadow-lg bg-gray-800 text-white"></div>       
+    <div id="toast" class="hidden fixed top-10 left-4 px-4 py-2 rounded shadow-lg bg-gray-800 text-white"></div>       
     <div id="navbar" class="bg-pink-600">
       <h5 id="room-name"  class="text-base font-normal whitespace-nowrap m-0">APL Ref Client</h5>
-
       <div id="room-badge" class="room-badge cursor-pointer bg-pink-800 hover:bg-pink-900">
         Copy Room link
       </div>
@@ -93,14 +92,14 @@
         <span>Chat ID:</span>
         <strong id="room-chat-id"></strong>
       </div>
+      <div id="add-referee" class="text-white bg-green-600 hover:bg-green-700 rounded px-3 py-1 text-sm cursor-pointer border-0 h-8 whitespace-nowrap flex items-center">Add Referee</div>
       <div class="navbar-spacer"></div>
-
       <div id="navbar-room-controls">
-        <button id="settings-trigger" class="text-white bg-white/15 hover:bg-white/25 rounded px-3 py-1 text-sm cursor-pointer border-0 h-8 whitespace-nowrap flex items-center">⚙ Settings</button>
+        <button id="settings-trigger" class="text-white bg-black/15 hover:bg-black/25 rounded px-3 py-1 text-sm cursor-pointer border-0 h-8 whitespace-nowrap flex items-center">⚙ Settings</button>
         <button id="leave-room-btn" class="text-white bg-amber-600 hover:bg-amber-700 rounded px-3 py-1 text-sm cursor-pointer border-0 h-8 whitespace-nowrap flex items-center">Leave Room</button>
         <button id="close-room-btn" class="text-white bg-red-700 hover:bg-red-800 rounded px-3 py-1 text-sm cursor-pointer border-0 h-8 whitespace-nowrap flex items-center">Close Room</button>
       </div>
-      <button id="theme-toggle" class="text-white bg-white/15 hover:bg-white/25 rounded px-3 py-1 text-sm cursor-pointer border-0 h-8 whitespace-nowrap flex items-center">☀️</button>
+      <button id="theme-toggle" class="text-white bg-black/15 hover:bg-black/25 rounded px-3 py-1 text-sm cursor-pointer border-0 h-8 whitespace-nowrap flex items-center">☀️</button>
 
       <div class="status-chip">
         <div class="status-dot" id="status-dot"></div>
@@ -239,6 +238,26 @@
         </div>
       </div>
     </div>
+
+    <!-- Invite Ref Modal -->
+    <div id="invite-ref-modal">
+      <div class="modal-content bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700">
+        <h5 class="text-lg font-medium mb-2 text-gray-800 dark:text-gray-100">Invite Referee<span class="result-msg" id="invite-ref-result"></span></h5>
+        <div class="mb-3">
+          <label class="text-sm text-gray-600 dark:text-gray-400 block mb-1">Username (optional)</label>
+          <input id="ref-invite-username" type="text" class="w-full border border-gray-300 dark:border-gray-600 rounded px-2 py-1 bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-100" placeholder="" />
+        </div>
+        <div class="mb-3">
+          <label class="text-sm text-gray-600 dark:text-gray-400 block mb-1">User ID (optional)</label>
+          <input id="ref-invite-userid" type="number" class="w-full border border-gray-300 dark:border-gray-600 rounded px-2 py-1 bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-100" placeholder="" />
+        </div>
+        <div class="modal-footer">
+          <button id="invite-ref-cancel" class="bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 px-4 py-2 rounded text-sm text-gray-800 dark:text-gray-100">Cancel</button>
+          <button id="invite-ref-confirm" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded text-sm">Invite</button>
+        </div>
+      </div>
+    </div>
+
 
     <!-- Page content -->
     <div class="container px-4 py-4 pt-14 with-sidebar">

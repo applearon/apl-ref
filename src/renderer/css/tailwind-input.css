@@ -240,6 +240,35 @@
   gap: 8px;
   margin-top: 16px;
 }
+#add-referee {
+    display: none;
+}
+#add-referee.visible { display: flex;}
+
+#invite-ref-modal {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.5);
+  z-index: 2000;
+  align-items: center;
+  justify-content: center;
+}
+#invite-ref-modal.visible { display: flex; }
+
+#invite-ref-modal .modal-content {
+  border-radius: 8px;
+  padding: 20px;
+  max-width: 400px;
+  width: 90%;
+}
+
+#invite-ref-modal .modal-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 16px;
+}
 
 
 #room-sidebar {

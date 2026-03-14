@@ -126,6 +126,8 @@ function showRoomActions(roomId, channelId, name, rm_password) {
   document.getElementById('room-badge').classList.add('visible')
   document.getElementById('room-chat-badge').classList.add('visible')
   document.getElementById('navbar-room-controls').classList.add('visible')
+
+  document.getElementById('add-referee').classList.add('visible')
   document.getElementById('room-badge').addEventListener('click', () => {
     try {
         navigator.clipboard.writeText("https://osu.ppy.sh/multiplayer/rooms/" + roomId)
@@ -142,9 +144,11 @@ function showRoomActions(roomId, channelId, name, rm_password) {
 function hideRoomActions() {
   currentRoomId = null
   document.getElementById('room-actions').classList.add('hidden')
+  document.getElementById('room-room-badge').classList.remove('visible')
   document.getElementById('room-chat-badge').classList.remove('visible')
   document.getElementById('navbar-room-controls').classList.remove('visible')
-  document.getElementById('room-info-id').textContent = ''
+
+  document.getElementById('add-referee').classList.remove('visible')
   document.getElementById('room-chat-id').textContent = ''
   document.getElementById('room-name').textContent = "APL Ref Client"
 }
@@ -172,7 +176,7 @@ function addPlayer(user_id, player_status, name, team) {
         if(teamSpan.classList.contains("team-none")) return;
         const result = await osu.MoveUser(currentRoomId, {
             user_id,
-            team: teamSpan.classList.contains("team-red") ? "red" : "blue"
+            team: teamSpan.classList.contains("team-red") ? "blue" : "red"
         })
         console.log(result)
     })
@@ -502,12 +506,30 @@ document.getElementById('invite-player-confirm').addEventListener('click', async
 })
 
 
-// change team
-const player_team_btns = document.querySelectorAll('player-team')
+const inviteRefModal = document.getElementById('invite-ref-modal')
 
-for (team_btn of player_team_btns) {
-    team_btn.addEventListener()
-}
+document.getElementById('add-referee').addEventListener('click', () => {
+  inviteRefModal.classList.add('visible')
+})
+document.getElementById('invite-ref-cancel').addEventListener('click', () => {
+  inviteRefModal.classList.remove('visible')
+})
+
+document.getElementById('invite-ref-confirm').addEventListener('click', async () => {
+    const username = str('ref-invite-username')
+    let user_id = int('ref-invite-userid')
+    if (username) {
+        const user = (await window.api.api.GetUser(username)).data;
+        user_id = user.id
+    }
+    const result = await osu.AddReferee(currentRoomId, user_id)
+    //console.log(result)
+    setResult('invite-ref-result', result)
+
+    inviteRefModal.classList.remove('visible')
+})
+
+
 // ── Connection status ──────────────────────────────────────────────────────
 const statusDot = document.getElementById('status-dot')
 const statusText = document.getElementById('status-text')
@@ -677,7 +699,7 @@ window.api.onUserLeft(info => {
 })
 window.api.onUserKicked(info => {
     logEvent('UserKicked', info)
-    removePlayer(info.user_id)
+    removePlayer(info.kicked_user_id)
 })
 window.api.onRoomSettingsChanged(info => {
     logEvent('RoomSettingsChanged', info);
@@ -730,7 +752,7 @@ window.api.onUserModsChanged(info => {
     const mods = info.mods
     const user_id = info.user_id
     const playerDiv = document.querySelector(`[data-user_id="${user_id}"]`)
-    playerDiv.getElementById("player-mods").textContent = mods.map(item => item.acronym).join(" ");
+    playerDiv.querySelector(".player-mods").textContent = mods.map(item => item.acronym).join(" ");
 })
 window.api.onUserStyleChanged(info => {
     logEvent('UserStyleChanged', info)
@@ -742,7 +764,7 @@ window.api.onUserTeamChanged(info => {
     logEvent('UserTeamChanged', info)
     const user_id = info.user_id;
     const user_UI = document.querySelector(`[data-user_id="${user_id}"]`).querySelector(".player-team")
-    user_UI.classList.remove(["team-none", "team-red", "team-blue"])
+    user_UI.classList.remove(["team-none", "team-red", "team-blue"]) //TODO i think it's broken if you change too many times???
     user_UI.classList.add("team-" + info.team)
 })
 window.api.onCountdownStarted(info => {
