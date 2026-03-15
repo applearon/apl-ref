@@ -16,7 +16,7 @@ Backend fixes:
 New Features:
 - Console mode/section for !mp style reffing
 - Referee Invited popup to join up
-
+- Rewrite it to support operating multiple rooms
 
 Bugs:
 - Investigate broken chat (& add more error handling)

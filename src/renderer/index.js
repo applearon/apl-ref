@@ -87,8 +87,18 @@ let currentRoomId = null
 
 
 // ── Helpers ───────────────────────────────────────────────────────────────
+let objs = Object.entries(window.api.send)
+let osu = {}
+for (const cmd of objs) {
+    osu[cmd[0]] = (...args) => {
+        console.log(cmd)
+        const res = cmd[1](...args)
+        logEvent(cmd[0], res)
+        return res
+    }
+}
+//let osu = window.api.send;
 
-const osu = window.api.send;
 
 function setResult(id, result) {
   const el = document.getElementById(id)
@@ -102,7 +112,12 @@ function setResult(id, result) {
   }
 }
 
-function logEvent(name, data) {
+async function logEvent(name, data) {
+  let isRes = false;
+  if (data instanceof Promise) { // if it's a method we sent
+      data = await data
+      isRes = true;
+  }
   console.log(name, data)
   const log = document.getElementById('event-log')
   const placeholder = log.querySelector('.event-placeholder')
@@ -110,9 +125,14 @@ function logEvent(name, data) {
   const entry = document.createElement('div')
   entry.className = 'event-entry'
   const time = document.createElement('div');
-  time.textContent = name + ': [' + new Date().toLocaleTimeString() + ']' 
+  time.textContent = name + ': [' + new Date().toLocaleTimeString() + ']'
+  if (isRes) {
+      time.textContent += data.success ? " Succeeded" : " Failed"
+      data = data.success ? data.data : data.error
+  }
   const logData = document.createElement('div');
-  delete data.room_id
+  if (data == null) {data = ''}
+  delete data.room_id // dont need since this client only works 1 room at a time
   if (typeof data == 'string') {
     logData.textContent = data
   } else {
