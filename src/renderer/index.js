@@ -37,17 +37,27 @@ let room_name = ""
 // Console mode logic TODO
 function cmdRunner(cmd, ...args) {
     // "Ping", "MakeRoom", "JoinRoom", "LeaveRoom", "CloseRoom", "InvitePlayer", "KickPlayer", "BanUser", "AddReferee", "RemoveReferee", "ChangeRoomSettings", "EditCurrentPlaylistItem", "AddPlaylistItem", "EditPlaylistItem", "RemovePlaylistItem", "MoveUser", "StartMatch", "StopMatchCountdown", "AbortMatch"
+    // im like 90% sure all of these are in the form of (room_id, json_with_stuff) but like i should double check...
     const map = {
-        "set": {"ChangeRoomSettings": {name: null, password: null, head_to_head: args[0]}},
+        "name": {},
+        "invite": {},
+        "lock": {}, // idt this is in prod yet
+        "unlock": {},
+        "set": {"ChangeRoomSettings": {head_to_head: args[0] == 0 ? "head_to_head" : "team_versus"}},
         "start": {"StartMatch": {countdown: args[0]}},
         "abort": {"AbortMatch": {}},
         "team": {"MoveCustom": {user_id: idFromUsername(args[0]), team: args[0]}, custom: true},
         "map": {"EditCurrentPlaylistItem": {beatmap_id: "_0", ruleset_id: "_1"}},
-        "mods": {"EditCustom": {mods: args}}, // i have no idea what to do for allowed mods
-        "kick": {},
-        "ban": {},
-        "password": {},
-        "addref": {},
+        "mods": {"EditCurrentPlaylistItem": {required_mods: args.map((x) => {return {acronym: x}})}}, // TODO this doesn't work with FM
+        "timer": {}, // need custom logic
+        "kick": {"KickPlayer": idFromUsername(arg[0])},
+        "ban": {"BanUser": idFromUsername(arg[0])}, // not in prod either? idk
+        "password": {"ChangeRoomSettings": {password: args[0]}},
+        "addref": {"AddReferee": args[0]},
+        "removeref": {"RemoveReferee": args[0]},
+        "listrefs": {}, // need custom logic
+        "close": {"CloseRoom": null}, // needs no other args
+        "help": {}, // expected 0 args and also needs custom logic
     }
     // in da loop if undefined then assume it can be skipped? or maybe most of them can just be okay with null i should double check
 }
