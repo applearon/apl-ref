@@ -11,7 +11,7 @@ UI fixes:
 - Playlist Items (and players?) should be in their own thing for scrolling
 
 Backend fixes:
-- Replace the redundant & hardcoded S->C methods with something that can be easily genMethods-ed
+- Replace the redundant & hardcoded S->C methods with something that can be easily genMethods-ed (done, not fully tested)
 
 New Features:
 - Console mode/section for !mp style reffing

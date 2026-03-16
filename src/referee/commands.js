@@ -1,4 +1,4 @@
-const COMMANDS = {
+const COMMANDS = { // i realize this might be bad form?
     Ping(message){return this.connection.invoke("Ping", message)},
     MakeRoom(request){return this.connection.invoke("MakeRoom", request)},
     JoinRoom(roomId){return this.connection.invoke("JoinRoom", roomId)},

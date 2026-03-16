@@ -204,7 +204,7 @@ function showRoomActions(roomId, channelId, name, rm_password) {
 function hideRoomActions() {
   currentRoomId = null
   document.getElementById('room-actions').classList.add('hidden')
-  document.getElementById('room-room-badge').classList.remove('visible')
+  document.getElementById('room-badge').classList.remove('visible')
   document.getElementById('room-chat-badge').classList.remove('visible')
   document.getElementById('navbar-room-controls').classList.remove('visible')
 
@@ -618,6 +618,7 @@ document.getElementById('make-room-btn').addEventListener('click', async () => {
     chat_channel_id = result.data.chat_channel_id;
     const playlist = result.data.playlist[0]
     addPlaylistItem(playlist.id, playlist.ruleset_id, playlist.beatmap_id, playlist.required_mods, playlist.allowed_mods, playlist.freestyle, playlist.was_played)
+    playlistItems[playlist.id] = playlist
   }
 })
 
@@ -743,8 +744,8 @@ function commandHandler(username, message) {
 }
 
 // ── Event listeners ────────────────────────────────────────────────────────
-window.api.onPong(msg => logEvent('Pong', msg))
-window.api.onUserJoined(async info => {
+window.api.on.Pong(msg => logEvent('Pong', msg))
+window.api.on.UserJoined(async info => {
     logEvent('UserJoined', info)
     const user = await window.api.api.GetUser(info.user_id)
     console.log(user.data.username, "has joined!!")
@@ -752,22 +753,22 @@ window.api.onUserJoined(async info => {
     players[info.user_id] = user.data
 
 })
-window.api.onUserLeft(info => {
+window.api.on.UserLeft(info => {
     logEvent('UserLeft', info)
     removePlayer(info.user_id)
 })
-window.api.onUserKicked(info => {
+window.api.on.UserKicked(info => {
     logEvent('UserKicked', info)
     removePlayer(info.kicked_user_id)
 })
-window.api.onRoomSettingsChanged(info => {
+window.api.on.RoomSettingsChanged(info => {
     logEvent('RoomSettingsChanged', info);
     room_name = info.name
     password = info.password
     document.getElementById('room-name').textContent = info.name
     document.getElementById('cur-match-type').textContent = info.type
 })
-window.api.onPlaylistItemAdded(info => {
+window.api.on.PlaylistItemAdded(info => {
     logEvent('PlaylistItemAdded', info)
     const data = info.playlist_item
     if (data.was_played) {
@@ -778,7 +779,7 @@ window.api.onPlaylistItemAdded(info => {
         playlistItems[data.id] =data
     }
 })
-window.api.onPlaylistItemChanged(info => {
+window.api.on.PlaylistItemChanged(info => {
     logEvent('PlaylistItemChanged', info)
     const data = info.playlist_item
     const playlist_id = data.id
@@ -793,56 +794,56 @@ window.api.onPlaylistItemChanged(info => {
     }
         refreshPlaylistItems()
 })
-window.api.onPlaylistItemRemoved(info => {
+window.api.on.PlaylistItemRemoved(info => {
     logEvent('PlaylistItemRemoved', info)
 
     delete playlistItems[info.playlist_item_id]
     refreshPlaylistItems()
 })
-window.api.onUserStatusChanged(info => {
+window.api.on.UserStatusChanged(info => {
     logEvent('UserStatusChanged', info)
     const user_id = info.user_id
     const playerDiv = document.querySelector(`[data-user_id="${user_id}"]`)
     playerDiv.querySelector(".player-status").textContent = info.status
 })
 
-window.api.onUserModsChanged(info => {
+window.api.on.UserModsChanged(info => {
     logEvent('UserModsChanged', info)
     const mods = info.mods
     const user_id = info.user_id
     const playerDiv = document.querySelector(`[data-user_id="${user_id}"]`)
     playerDiv.querySelector(".player-mods").textContent = mods.map(item => item.acronym).join(" ");
 })
-window.api.onUserStyleChanged(info => {
+window.api.on.UserStyleChanged(info => {
     logEvent('UserStyleChanged', info)
     // idk man if your tourmament has freestyle you have bigger problems
     // TODO fix this i guess
 })
 
-window.api.onUserTeamChanged(info => {
+window.api.on.UserTeamChanged(info => {
     logEvent('UserTeamChanged', info)
     const user_id = info.user_id;
     const user_UI = document.querySelector(`[data-user_id="${user_id}"]`).querySelector(".player-team")
     user_UI.classList.remove(["team-none", "team-red", "team-blue"]) //TODO i think it's broken if you change too many times???
     user_UI.classList.add("team-" + info.team)
 })
-window.api.onCountdownStarted(info => {
+window.api.on.CountdownStarted(info => {
     document.getElementById('cur-match-countdown').textContent = info.seconds
     logEvent('CountdownStarted', info)
 })
-window.api.onCountdownStopped(info => {
+window.api.on.CountdownStopped(info => {
     logEvent('CountdownStopped', info)
     document.getElementById('cur-match-countdown').textContent = "-"
 })
-window.api.onMatchStarted(info => {
+window.api.on.MatchStarted(info => {
     logEvent('MatchStarted', info)
     document.getElementById('cur-match-status').textContent = "Playing"
 })
-window.api.onMatchAborted(info => {
+window.api.on.MatchAborted(info => {
     logEvent('MatchAborted', info)
     document.getElementById('cur-match-status').textContent = "Aborted"
 })
-window.api.onMatchCompleted(info => {
+window.api.on.MatchCompleted(info => {
     logEvent('MatchCompleted', info)
     document.getElementById('cur-match-status').textContent = "Idle"
     addScore(info.room_id, info.playlist_item_id)

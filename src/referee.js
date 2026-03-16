@@ -5,12 +5,13 @@ const { COMMANDS } = require('./referee/commands')
 const SPECTATOR_SERVER_URL = 'https://spectator.ppy.sh'
 
 class RefereeClient {
-  constructor(url = SPECTATOR_SERVER_URL, callbacks = {}, accessToken = null) {
+  constructor(url = SPECTATOR_SERVER_URL, accessToken = null, sendToRenderer) {
     this.connection = null
     this.url = url
     this.connected = false
-    this.callbacks = callbacks
+    this.callbacks = {}
     this.accessToken = accessToken
+    this.sendToRenderer = sendToRenderer
   }
 
   async connect() {
@@ -23,27 +24,10 @@ class RefereeClient {
       .build()
 
     setupEventHandlers(this.connection, {
-      onPong: this.callbacks.onPong,
-      onUserJoined: this.callbacks.onUserJoined,
-      onUserLeft: this.callbacks.onUserLeft,
-      onUserKicked: this.callbacks.onUserKicked,
-      onRoomSettingsChanged: this.callbacks.onRoomSettingsChanged,
-      onPlaylistItemAdded: this.callbacks.onPlaylistItemAdded,
-      onPlaylistItemChanged: this.callbacks.onPlaylistItemChanged,
-      onPlaylistItemRemoved: this.callbacks.onPlaylistItemRemoved,
-      onUserStatusChanged: this.callbacks.onUserStatusChanged,
-      onUserModsChanged: this.callbacks.onUserModsChanged,
-      onUserStyleChanged: this.callbacks.onUserStyleChanged,
-      onUserTeamChanged: this.callbacks.onUserTeamChanged,
-      onCountdownStarted: this.callbacks.onCountdownStarted,
-      onCountdownStopped: this.callbacks.onCountdownStopped,
-      onMatchStarted: this.callbacks.onMatchStarted,
-      onMatchAborted: this.callbacks.onMatchAborted,
-      onMatchCompleted: this.callbacks.onMatchCompleted,
       onClose: () => { this.connected = false },
       onReconnecting: this.callbacks.onReconnecting,
       onReconnected: () => { this.connected = true }
-    })
+    }, this.sendToRenderer)
 
 
     try {

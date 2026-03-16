@@ -73,25 +73,7 @@ async function initializeApp(accessToken) {
     await cleanup()
   })
 
-  refereeClient = new RefereeClient(SPECTATOR_SERVER_URL, {
-    onPong: (message) => sendToRenderer('pong-received', message),
-    onUserJoined: (info) => sendToRenderer('user-joined', info),
-    onUserLeft: (info) => sendToRenderer('user-left', info),
-    onUserKicked: (info) => sendToRenderer('user-kicked', info),
-    onRoomSettingsChanged: (info) => sendToRenderer('room-settings-changed', info),
-    onPlaylistItemAdded: (info) => sendToRenderer('playlist-item-added', info),
-    onPlaylistItemChanged: (info) => sendToRenderer('playlist-item-changed', info),
-    onPlaylistItemRemoved: (info) => sendToRenderer('playlist-item-removed', info),
-    onUserStatusChanged: (info) => sendToRenderer('user-status-changed', info),
-    onUserModsChanged: (info) => sendToRenderer('user-mods-changed', info),
-    onUserStyleChanged: (info) => sendToRenderer('user-style-changed', info),
-    onUserTeamChanged: (info) => sendToRenderer('user-team-changed', info),
-    onCountdownStarted: (info) => sendToRenderer('countdown-started', info),
-    onCountdownStopped: (info) => sendToRenderer('countdown-stopped', info),
-    onMatchStarted: (info) => sendToRenderer('match-started', info),
-    onMatchAborted: (info) => sendToRenderer('match-aborted', info),
-    onMatchCompleted: (info) => sendToRenderer('match-completed', info)
-  }, accessToken)
+  refereeClient = new RefereeClient(SPECTATOR_SERVER_URL, accessToken, sendToRenderer)
 
   try {
     await refereeClient.connect()
@@ -101,7 +83,7 @@ async function initializeApp(accessToken) {
 
   app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) createMainWindow()
-  })
+  }) 
   setupWSEvents(accessToken, sendToRenderer)
 }
 

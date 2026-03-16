@@ -2,5 +2,6 @@ node_modules/
 config.json
 token.json
 scripts/IRefereeHubServer.cs
+scripts/IRefereeHubClient.cs
 out/
 src/renderer/css/tailwind.css
