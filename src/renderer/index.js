@@ -91,7 +91,6 @@ let objs = Object.entries(window.api.send)
 let osu = {}
 for (const cmd of objs) {
     osu[cmd[0]] = (...args) => {
-        console.log(cmd)
         const res = cmd[1](...args)
         logEvent(cmd[0], res)
         return res
@@ -129,10 +128,11 @@ async function logEvent(name, data) {
   if (isRes) {
       time.textContent += data.success ? " Succeeded" : " Failed"
       data = data.success ? data.data : data.error
+  } else {
+      delete data.room_id // dont need since this client only works 1 room at a time
   }
   const logData = document.createElement('div');
   if (data == null) {data = ''}
-  delete data.room_id // dont need since this client only works 1 room at a time
   if (typeof data == 'string') {
     logData.textContent = data
   } else {
@@ -601,14 +601,13 @@ document.getElementById('make-room-btn').addEventListener('click', async () => {
     name: str('make-room-name')
   })
   setResult('make-room-result', result)
-  console.log(result)
   if (result.success && result.data) {
     showRoomActions(result.data.room_id, result.data.chat_channel_id, result.data.name, result.data.password)
     hideRoomCreation()
-    osu.StartMatch(currentRoomId, {}) // Jank as hell but this should properly give the Playlist info I need
     connected = true
     chat_channel_id = result.data.chat_channel_id;
-    console.log(result.data)
+    const playlist = result.data.playlist[0]
+    addPlaylistItem(playlist.id, playlist.ruleset_id, playlist.beatmap_id, playlist.required_mods, playlist.allowed_mods, playlist.freestyle, playlist.was_played)
   }
 })
 
