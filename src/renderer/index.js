@@ -415,7 +415,7 @@ async function addScore(room_id, playlist_id) {
         if (head_to_head) {
             addSoloScore(score.user.username, score.total_score)
         } else {
-            const team = document.querySelector(`[class~="${score.user_id}"]`).querySelector(".player-team").classList.contains('team-red') ? 'red' : 'blue'
+            const team = document.querySelector(`[data-user_id="${score.user_id}"]`).querySelector(".player-team").classList.contains('team-red') ? 'red' : 'blue'
             if (team == 'red') red_score += score.total_score
             if (team == 'blue') blue_score += score.total_score
             addTeamSoloScore(score.user.username, score.total_score, team)
@@ -675,7 +675,7 @@ document.getElementById('leave-room-btn').addEventListener('click', async () => 
     showRoomCreation()
     connected = false;
     players = {}
-    playlistItems = {}
+    playlistItems = {} // TODO for both of these, make it trigger a deletion or something of the playlistitems on the UI
     chat_channel_id = ""
 
     document.getElementById("chat-messages").innerHTML = '<div id="no-messages" class="text-gray-500 dark:text-gray-400 text-sm italic">No messages yet...</div>'
