@@ -1,3 +1,5 @@
+![Demo usage](./assets/APLREFDemo.png)
+
 # apl's lazer ref client
 
 
