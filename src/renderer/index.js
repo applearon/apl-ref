@@ -413,8 +413,18 @@ async function addScore(room_id, playlist_id) {
     scoreMode(head_to_head);
     //const addFunc = head_to_head ? addSoloScore : addTeamSoloScore
 
-    const scores = (await window.api.api.GetScores(room_id, playlist_id)).data
+    let scores = (await window.api.api.GetScores(room_id, playlist_id)).data
     console.log(scores)
+    if (scores.error != null) {
+        logEvent('GetScores', scores)
+        await new Promise(r => setTimeout(r, 5000)); // wait 5 sec
+        scores = (await window.api.api.GetScores(room_id, playlist_id)).data
+        console.log(scores)
+        if (scores.error != null) {
+            logEvent('GetScores', scores)
+            return; // TODO idk if it failed twice ggs
+        }
+    }
     let red_score = 0
     let blue_score = 0
     for (score of scores.scores) {
