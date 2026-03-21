@@ -327,7 +327,7 @@ async function addPlaylistItem(playlist_id, ruleset_id, beatmap_id, required_mod
     })
 
     document.getElementById("playlist-items").appendChild(clone)
-    const beatmap = (await window.api.api.GetBeatmap(beatmap_id)).data
+    const beatmap = (await window.api.api.GetBeatmap(beatmap_id)).data // only do this if the beatmap actually changes
     document.querySelector(`[class~="${playlist_id}"]`).querySelector('.playlist-item-id').textContent = beatmap.beatmapset.title + ` [${beatmap.version}]`
 }
 
@@ -348,8 +348,14 @@ function addChatMsg(msg, username, pfp) {
     clone.querySelector('.chat-avatar').src = pfp
     clone.querySelector('.chat-username').textContent = username
     clone.querySelector('.chat-message').textContent = msg
+    
+    const chatbox = document.getElementById("chat-messages")
+    chatbox.appendChild(clone)
 
-    document.getElementById("chat-messages").appendChild(clone)
+    if (chatbox.scrollHeight - chatbox.scrollTop - chatbox.clientHeight < 50) {
+        chatbox.scrollTop = chatbox.scrollHeight;
+    }
+
 }
 
 function refreshPlaylistItems() {
@@ -824,7 +830,7 @@ window.api.on.UserTeamChanged(info => {
     logEvent('UserTeamChanged', info)
     const user_id = info.user_id;
     const user_UI = document.querySelector(`[data-user_id="${user_id}"]`).querySelector(".player-team")
-    user_UI.classList.remove(["team-none", "team-red", "team-blue"]) //TODO i think it's broken if you change too many times???
+    user_UI.classList.remove("team-none", "team-red", "team-blue")
     user_UI.classList.add("team-" + info.team)
 })
 window.api.on.CountdownStarted(info => {
