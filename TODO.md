@@ -23,7 +23,4 @@ New Features:
 Bugs:
 - Editing playlist might cause it to attempt to edit a nonexistent playlist item
 - Playlist ID lookup fails hard (may happen when it takes a bit for the user to send their score)
-
-joining room doesn't properly set state
-
-fix chat scroll being ugly still
+- Joining room doesn't properly set status
