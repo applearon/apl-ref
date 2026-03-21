@@ -620,7 +620,7 @@ updateStatus()
 setInterval(updateStatus, 5000)
 
 // ── Room Setup ─────────────────────────────────────────────────────────────
-document.getElementById('make-room-btn').addEventListener('click', async () => {
+document.getElementById('make-room-btn').addEventListener('click', async () => { // TODO centralize logic for here and joining room
   const result = await osu.MakeRoom({
     ruleset_id: int('make-ruleset-id'),
     beatmap_id: int('make-beatmap-id'),
@@ -644,6 +644,12 @@ document.getElementById('join-room-btn').addEventListener('click', async () => {
   setResult('join-room-result', result)
   if (result.success) {
     showRoomActions(roomId, result.data.chat_channel_id, result.data.name, result.data.password)
+    hideRoomCreation()
+    connected = true
+    chat_channel_id = result.data.chat_channel_id;
+    const playlist = result.data.playlist[0]
+    addPlaylistItem(playlist.id, playlist.ruleset_id, playlist.beatmap_id, playlist.required_mods, playlist.allowed_mods, playlist.freestyle, playlist.was_played)
+    playlistItems[playlist.id] = playlist
   }
 })
 
