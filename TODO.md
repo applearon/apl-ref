@@ -4,7 +4,6 @@ UI fixes:
 - Add ability to see/change Mod Settings (changing might be too hard?)
 - Add Ban User to the UI (make sure to wait until it's actually in prod though..)
 
-- Ensure "Add Referee" works properly
 - Add add user mod settings & have full names for mods selected to rightbar
 - Remove ping button probably (add "Debug mode" in settings?)
 - Make stuff resize properly to smaller window sizes
@@ -22,4 +21,4 @@ New Features:
 
 Bugs:
 - Playlist item score lookup fails hard (may happen when it takes a bit for the user to send their score) (fixed, needs testing)
-- Joining room doesn't properly set status
+- Joining room doesn't properly set status (done, needs testing)
