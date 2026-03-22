@@ -20,5 +20,5 @@ New Features:
 
 
 Bugs:
-- Playlist item score lookup fails hard (may happen when it takes a bit for the user to send their score) (fixed, needs testing)
+- Playlist item score lookup fails hard (fixed, needs testing on team_versus)
 - Joining room doesn't properly set status (done, needs testing)

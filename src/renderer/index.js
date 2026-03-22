@@ -412,18 +412,12 @@ async function addScore(room_id, playlist_id) {
     const head_to_head = document.getElementById('cur-match-type').textContent == "head_to_head"
     scoreMode(head_to_head);
     //const addFunc = head_to_head ? addSoloScore : addTeamSoloScore
-
     let scores = (await window.api.api.GetScores(room_id, playlist_id)).data
+    console.log(`Got scores from room ${room_id} and playlist ${playlist_id}`)
     console.log(scores)
     if (scores.error != null) {
         logEvent('GetScores', scores)
-        await new Promise(r => setTimeout(r, 5000)); // wait 5 sec
-        scores = (await window.api.api.GetScores(room_id, playlist_id)).data
-        console.log(scores)
-        if (scores.error != null) {
-            logEvent('GetScores', scores)
-            return; // TODO idk if it failed twice ggs
-        }
+        return; // TODO idk if it failed then ggs
     }
     let red_score = 0
     let blue_score = 0
@@ -635,6 +629,8 @@ document.getElementById('make-room-btn').addEventListener('click', async () => {
     const playlist = result.data.playlist[0]
     addPlaylistItem(playlist.id, playlist.ruleset_id, playlist.beatmap_id, playlist.required_mods, playlist.allowed_mods, playlist.freestyle, playlist.was_played)
     playlistItems[playlist.id] = playlist
+
+    document.getElementById('cur-match-type').textContent = result.data.type
   }
 })
 
@@ -650,6 +646,8 @@ document.getElementById('join-room-btn').addEventListener('click', async () => {
     const playlist = result.data.playlist[0]
     addPlaylistItem(playlist.id, playlist.ruleset_id, playlist.beatmap_id, playlist.required_mods, playlist.allowed_mods, playlist.freestyle, playlist.was_played)
     playlistItems[playlist.id] = playlist
+
+    document.getElementById('cur-match-type').textContent = result.data.type
   }
 })
 
@@ -773,6 +771,7 @@ window.api.on.UserJoined(async info => {
     console.log(user.data.username, "has joined!!")
     addPlayer(info.user_id, "idle", user.data.username, "none")
     players[info.user_id] = user.data
+    players[info.user_id].state = "idle" // scuffed as hell but whatever
 
 })
 window.api.on.UserLeft(info => {
@@ -827,6 +826,7 @@ window.api.on.UserStatusChanged(info => {
     const user_id = info.user_id
     const playerDiv = document.querySelector(`[data-user_id="${user_id}"]`)
     playerDiv.querySelector(".player-status").textContent = info.status
+    players[user_id].state = info.status
 })
 
 window.api.on.UserModsChanged(info => {
@@ -868,7 +868,7 @@ window.api.on.MatchAborted(info => {
 window.api.on.MatchCompleted(info => {
     logEvent('MatchCompleted', info)
     document.getElementById('cur-match-status').textContent = "Idle"
-    addScore(info.room_id, info.playlist_item_id)
+    addScore(currentRoomId, info.playlist_item_id)
 })
 
 window.api.api.onChatMessage(async buffer => {
