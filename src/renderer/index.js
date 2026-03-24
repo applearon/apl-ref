@@ -59,7 +59,20 @@ function cmdRunner(cmd, ...args) {
         "close": {"CloseRoom": null}, // needs no other args
         "help": {}, // expected 0 args and also needs custom logic
     }
+    for (const x of Object.entries(map[cmd])) {
+        console.log(x, cmd)
+        osu[x[0]](x[1])
+    }
     // in da loop if undefined then assume it can be skipped? or maybe most of them can just be okay with null i should double check
+}
+
+function handleModChange(args) {
+    // this is so stupid
+    const fm = x.map((x) => x.toLowerCase()).includes('freemod')
+    return {
+        required_mods: fm ? null : args.map((x) => {return {acronym: x}}),
+        allowed_mods: fm ? [ 'hd', 'hr', 'ez', 'fl', 'rx', 'so', 'nf', 'ap' ] : null // assuming only want normal mods..
+    }
 }
 
 // ── UI helpers ──────────────────────────────────────────────────────────────
