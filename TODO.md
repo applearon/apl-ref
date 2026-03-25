@@ -5,10 +5,12 @@ UI fixes:
 - Add Ban User to the UI (make sure to wait until it's actually in prod though..)
 
 - Add add user mod settings & have full names for mods selected to rightbar
+    - use data from osu-web/database/mods.json
 - Remove ping button probably (add "Debug mode" in settings?)
 - Make stuff resize properly to smaller window sizes
 - Playlist Items (and players?) should be in their own thing for scrolling
-
+- Rename some of the classes to be more accurate/generic
+    - Replace some of them with tailwind equivalents
 
 New Features:
 - Console mode/section for !mp style reffing
