@@ -50,7 +50,6 @@ function createQueryHandler(getRefereeClient, queryFn) {
 
 function setupIpcHandlers(getRefereeClient, getMainWindow) {
     ipcMain.handle('get-api-data', async () => {
-        console.log(EVENTS)
         return [CMDS_SET, EVENTS]
     })
     CMDS_SET.forEach(cmd => {
