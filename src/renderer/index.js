@@ -20,7 +20,10 @@ if (savedTheme === 'light') {
   document.documentElement.classList.remove('dark')
 }
 updateThemeIcon()
-
+let MODS;
+fetch('mods.json').then(mod_res => {
+    mod_res.json().then(mods => MODS = mods)
+})
 
 // Stored Data TODO: make this into a proper class
 let players = {};
@@ -231,6 +234,14 @@ function showToast(message, duration = 3000) {
      toast.textContent = message
      toast.classList.remove('hidden')
      setTimeout(() => toast.classList.add('hidden'), duration)
+}
+
+
+function debugMode() {
+    showRoomActions()
+    showRoomCreation()
+    const ping = document.getElementById("debug-menu")
+    ping.classList.add('visible')
 }
 
 function addPlayer(user_id, player_status, name, team) {
@@ -842,7 +853,7 @@ window.api.on.UserStatusChanged(info => {
     players[user_id].state = info.status
 })
 
-window.api.on.UserModsChanged(info => {
+window.api.on.UserModsChanged(info => { // TODO: check if when playlistItem changes/removes if user mods get reset
     logEvent('UserModsChanged', info)
     const mods = info.mods
     const user_id = info.user_id
