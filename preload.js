@@ -1,5 +1,5 @@
 const { contextBridge, ipcRenderer } = require('electron')
-const COMMANDS = new Set(["Ping", "MakeRoom", "JoinRoom", "LeaveRoom", "CloseRoom", "InvitePlayer", "KickPlayer", "BanUser", "AddReferee", "RemoveReferee", "ChangeRoomSettings", "EditCurrentPlaylistItem", "AddPlaylistItem", "EditPlaylistItem", "RemovePlaylistItem", "MoveUser", "StartMatch", "StopMatchCountdown", "AbortMatch"]);
+const COMMANDS = new Set(["Ping", "MakeRoom", "JoinRoom", "LeaveRoom", "CloseRoom", "InvitePlayer", "KickPlayer", "BanUser", "AddReferee", "RemoveReferee", "ChangeRoomSettings", "EditCurrentPlaylistItem", "AddPlaylistItem", "EditPlaylistItem", "RemovePlaylistItem", "Roll", "MoveUser", "SetLockState", "StartMatch", "StopMatchCountdown", "AbortMatch"]);
 
 const EVENTS = new Set(["Pong", "UserJoined", "UserLeft", "UserKicked", "UserBanned", "RefereeAdded", "RefereeRemoved", "RefereeInvited", "RoomSettingsChanged", "MatchStateChanged", "PlaylistItemAdded", "PlaylistItemChanged", "PlaylistItemRemoved", "RollCompleted", "UserStatusChanged", "UserModsChanged", "UserStyleChanged", "UserTeamChanged", "CountdownStarted", "CountdownStopped", "MatchStarted", "MatchAborted", "MatchCompleted"])
 const api = {}
