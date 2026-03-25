@@ -1,7 +1,7 @@
 const { ipcMain } = require('electron')
 const { WebSocket } = require('ws')
-const COMMANDS = ["Ping", "MakeRoom", "JoinRoom", "LeaveRoom", "CloseRoom", "InvitePlayer", "KickPlayer", "AddReferee", "RemoveReferee", "ChangeRoomSettings", "EditCurrentPlaylistItem", "AddPlaylistItem", "EditPlaylistItem", "RemovePlaylistItem", "MoveUser", "StartMatch", "StopMatchCountdown", "AbortMatch"]
-
+const { CMDS_SET } = require('../referee/commands')
+const { EVENTS } = require('../referee/events')
 function createHandler(getRefereeClient, handlerFn) {
   return async (event, ...args) => {
     const refereeClient = getRefereeClient()
@@ -49,7 +49,11 @@ function createQueryHandler(getRefereeClient, queryFn) {
 }
 
 function setupIpcHandlers(getRefereeClient, getMainWindow) {
-    COMMANDS.forEach(cmd => {
+    ipcMain.handle('get-api-data', async () => {
+        console.log(EVENTS)
+        return [CMDS_SET, EVENTS]
+    })
+    CMDS_SET.forEach(cmd => {
         ipcMain.handle(cmd, genericHandler(getRefereeClient, cmd));
     })
   ipcMain.handle('GetUser', createQueryHandler(getRefereeClient, (client, user_id) => {

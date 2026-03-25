@@ -1,3 +1,5 @@
+const CMDS_SET = new Set(["Ping", "MakeRoom", "JoinRoom", "LeaveRoom", "CloseRoom", "InvitePlayer", "KickPlayer", "BanUser", "AddReferee", "RemoveReferee", "ChangeRoomSettings", "EditCurrentPlaylistItem", "AddPlaylistItem", "EditPlaylistItem", "RemovePlaylistItem", "Roll", "MoveUser", "SetLockState", "StartMatch", "StopMatchCountdown", "AbortMatch"]);
+
 const COMMANDS = { // i realize this might be bad form?
     Ping(message){return this.connection.invoke("Ping", message)},
     MakeRoom(request){return this.connection.invoke("MakeRoom", request)},
@@ -21,4 +23,4 @@ const COMMANDS = { // i realize this might be bad form?
     StopMatchCountdown(roomId){return this.connection.invoke("StopMatchCountdown", roomId)},
     AbortMatch(roomId){return this.connection.invoke("AbortMatch", roomId)},
 }
-module.exports = { COMMANDS }
+module.exports = { COMMANDS, CMDS_SET }

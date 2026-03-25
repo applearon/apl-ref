@@ -29,4 +29,4 @@ function setupEventHandlers(connection, callbacks, sendToRenderer) {
   })
 }
 
-module.exports = { setupEventHandlers }
+module.exports = { setupEventHandlers, EVENTS }
