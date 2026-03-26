@@ -119,8 +119,14 @@ for (const cmd of objs) {
         return res
     }
 }
-//let osu = window.api.send;
 
+// automatically log all incoming events
+objs = Object.entries(window.api.on)
+for (const cmd of objs) {
+    cmd[1](info => {
+        logEvent(cmd[0], info)
+    })
+}
 
 function setResult(id, result) {
   const el = document.getElementById(id)
@@ -777,9 +783,7 @@ function commandHandler(username, message) {
 }
 
 // ── Event listeners ────────────────────────────────────────────────────────
-window.api.on.Pong(msg => logEvent('Pong', msg))
 window.api.on.UserJoined(async info => {
-    logEvent('UserJoined', info)
     const user = await window.api.api.GetUser(info.user_id)
     console.log(user.data.username, "has joined!!")
     addPlayer(info.user_id, "idle", user.data.username, "none")
@@ -788,22 +792,18 @@ window.api.on.UserJoined(async info => {
 
 })
 window.api.on.UserLeft(info => {
-    logEvent('UserLeft', info)
     removePlayer(info.user_id)
 })
 window.api.on.UserKicked(info => {
-    logEvent('UserKicked', info)
     removePlayer(info.kicked_user_id)
 })
 window.api.on.RoomSettingsChanged(info => {
-    logEvent('RoomSettingsChanged', info);
     room_name = info.name
     password = info.password
     document.getElementById('room-name').textContent = info.name
     document.getElementById('cur-match-type').textContent = info.type
 })
 window.api.on.PlaylistItemAdded(info => {
-    logEvent('PlaylistItemAdded', info)
     const data = info.playlist_item
     if (data.was_played) {
         removePlaylistItem(data.id)
@@ -814,7 +814,6 @@ window.api.on.PlaylistItemAdded(info => {
     }
 })
 window.api.on.PlaylistItemChanged(info => {
-    logEvent('PlaylistItemChanged', info)
     const data = info.playlist_item
     const playlist_id = data.id
     //const playlist = document.querySelector(`[class~="${playlist_id}"]`)
@@ -829,13 +828,10 @@ window.api.on.PlaylistItemChanged(info => {
         refreshPlaylistItems()
 })
 window.api.on.PlaylistItemRemoved(info => {
-    logEvent('PlaylistItemRemoved', info)
-
     delete playlistItems[info.playlist_item_id]
     refreshPlaylistItems()
 })
 window.api.on.UserStatusChanged(info => {
-    logEvent('UserStatusChanged', info)
     const user_id = info.user_id
     const playerDiv = document.querySelector(`[data-user_id="${user_id}"]`)
     playerDiv.querySelector(".player-status").textContent = info.status
@@ -843,20 +839,17 @@ window.api.on.UserStatusChanged(info => {
 })
 
 window.api.on.UserModsChanged(info => {
-    logEvent('UserModsChanged', info)
     const mods = info.mods
     const user_id = info.user_id
     const playerDiv = document.querySelector(`[data-user_id="${user_id}"]`)
     playerDiv.querySelector(".player-mods").textContent = mods.map(item => item.acronym).join(" ");
 })
 window.api.on.UserStyleChanged(info => {
-    logEvent('UserStyleChanged', info)
     // idk man if your tourmament has freestyle you have bigger problems
     // TODO fix this i guess
 })
 
 window.api.on.UserTeamChanged(info => {
-    logEvent('UserTeamChanged', info)
     const user_id = info.user_id;
     const user_UI = document.querySelector(`[data-user_id="${user_id}"]`).querySelector(".player-team")
     user_UI.classList.remove("team-none", "team-red", "team-blue")
@@ -864,22 +857,17 @@ window.api.on.UserTeamChanged(info => {
 })
 window.api.on.CountdownStarted(info => {
     document.getElementById('cur-match-countdown').textContent = info.seconds
-    logEvent('CountdownStarted', info)
 })
 window.api.on.CountdownStopped(info => {
-    logEvent('CountdownStopped', info)
     document.getElementById('cur-match-countdown').textContent = "-"
 })
 window.api.on.MatchStarted(info => {
-    logEvent('MatchStarted', info)
     document.getElementById('cur-match-status').textContent = "Playing"
 })
 window.api.on.MatchAborted(info => {
-    logEvent('MatchAborted', info)
     document.getElementById('cur-match-status').textContent = "Aborted"
 })
 window.api.on.MatchCompleted(info => {
-    logEvent('MatchCompleted', info)
     document.getElementById('cur-match-status').textContent = "Idle"
     addScore(currentRoomId, info.playlist_item_id)
 })
