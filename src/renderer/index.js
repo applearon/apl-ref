@@ -389,6 +389,25 @@ function refreshPlaylistItems() {
     }
 }
 
+
+function addVerboseMods(user_id, mods) {
+    const empty = mods.length == 0
+    const verboseMods = document.getElementById("mods-verbose-container");
+    const cur = verboseMods.querySelector(`[data-user_id="${user_id}"]`)
+    const template = document.getElementById("player-mods-verbose");
+    const clone = template.content.cloneNode(true);
+    const mod_div = cur != null ? cur : clone.querySelector(".settings")
+    let settings = ""
+    for (const mod of mods) {
+        const mod_info = MODS[0].Mods.find(x => x.Acronym == mod.acronym)
+        settings += JSON.stringify()
+    }
+    mod_div.textContent = settings;
+    mod_div.dataset.user_id = user_id
+    if (cur == null) verboseMods.appendChild(clone)
+}
+
+
 // Scores
 function addSoloScore(username, score) {
     const template = document.getElementById("player-score")
@@ -859,7 +878,9 @@ window.api.on.UserModsChanged(info => { // TODO: check if when playlistItem chan
     const user_id = info.user_id
     const playerDiv = document.querySelector(`[data-user_id="${user_id}"]`)
     playerDiv.querySelector(".player-mods").textContent = mods.map(item => item.acronym).join(" ");
+    addVerboseMods(user_id, mods)
 })
+
 window.api.on.UserStyleChanged(info => {
     logEvent('UserStyleChanged', info)
     // idk man if your tourmament has freestyle you have bigger problems
@@ -919,3 +940,5 @@ window.api.api.onChatMessage(async buffer => {
           //}
     }
 })
+
+

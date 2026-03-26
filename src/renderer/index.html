@@ -73,7 +73,7 @@
     <div id="room-rightbar" class="fixed top-14 right-0 w-[var(--rightbar-width)] h-[calc(100vh-56px)] flex flex-col bg-gray-200 dark:bg-gray-800 text-gray-800 dark:text-gray-200 border-l border-gray-200">
       <div class="p-4 flex-1 overflow-y-auto padding-16 scrollbar-hover">
         <h3 class="sidebar-title">User Mods</h3>
-        <div class="" id="user-mods-verbose">
+        <div class="" id="mods-verbose-container">
         </div>
       </div>
       <div class="p-4 flex-2 overflow-y-auto border-t border-gray-300 scrollbar-hover">
@@ -396,6 +396,11 @@
         </div>
       </div>
     </template>
+
+    <template id="player-mods-verbose">
+        <div class="settings"></div>
+    </template>
+
     <template id="player-score">
       <div class="flex justify-between text-sm items-center gap-2">
         <span class="score-player-name truncate"></span>
