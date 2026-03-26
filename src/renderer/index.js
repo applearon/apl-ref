@@ -390,7 +390,8 @@ function refreshPlaylistItems() {
 }
 
 
-function addVerboseMods(user_id, mods) {
+function addVerboseMods(user_id, mods) { // might work, **definitely** needs testing
+    // TODO add the user's name to the UI & make it pretty
     const empty = mods.length == 0
     const verboseMods = document.getElementById("mods-verbose-container");
     const cur = verboseMods.querySelector(`[data-user_id="${user_id}"]`)
@@ -400,7 +401,7 @@ function addVerboseMods(user_id, mods) {
     let settings = ""
     for (const mod of mods) {
         const mod_info = MODS[0].Mods.find(x => x.Acronym == mod.acronym)
-        settings += JSON.stringify()
+        settings += mod_info.Name + ":" + JSON.stringify(mod.settings)
     }
     mod_div.textContent = settings;
     mod_div.dataset.user_id = user_id
