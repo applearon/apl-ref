@@ -18,6 +18,7 @@ npm start
 
 ## Compile
 ```
+npm run gensources # importantly downloads mods.json
 npm run make -- --platform=win32
 ```
 You can change or omit `-- --platform=win32` depending on what platform you build for. By default, it will build as a bundled zip.
