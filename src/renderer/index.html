@@ -398,7 +398,19 @@
     </template>
 
     <template id="player-mods-verbose">
-        <div class="settings"></div>
+      <div class="mods-container bg-gray-100 dark:bg-gray-700 p-3 rounded text-sm mb-2">
+        <div class="mods-user font-semibold text-gray-900 dark:text-gray-50 mb-3"></div>
+        <div class="mods-list flex flex-col gap-2"></div>
+      </div>
+    </template>
+
+    <template id="player-mod-item">
+      <div class="mod-item bg-gray-50 dark:bg-gray-800 p-2 rounded">
+        <div class="flex justify-between items-center mb-1">
+          <span class="mod-item-name text-xs px-2 py-0.5 bg-gray-200 dark:bg-gray-700 rounded text-gray-600 dark:text-gray-400 font-medium"></span>
+        </div>
+        <div class="mod-item-settings font-mono text-xs text-gray-500 dark:text-gray-400 break-all"></div>
+      </div>
     </template>
 
     <template id="player-score">

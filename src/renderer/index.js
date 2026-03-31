@@ -398,18 +398,40 @@ function refreshPlaylistItems() {
 
 function addVerboseMods(user_id, mods) { // might work, **definitely** needs testing
     // TODO add the user's name to the UI & make it pretty
-    const empty = mods.length == 0
+    let user = players[user_id] ?? other_players[user_id] // other players is literally just for testing
     const verboseMods = document.getElementById("mods-verbose-container");
     const cur = verboseMods.querySelector(`[data-user_id="${user_id}"]`)
     const template = document.getElementById("player-mods-verbose");
+    const mod_template = document.getElementById("player-mod-item")
     const clone = template.content.cloneNode(true);
-    const mod_div = cur != null ? cur : clone.querySelector(".settings")
-    let settings = ""
-    for (const mod of mods) {
+    const mod_div = cur != null ? cur : clone.querySelector(".mods-container")
+    const mod_list = mod_div.querySelector(".mods-list")
+    let empty = true
+    mod_list.innerHTML = ""
+    for (const mod of mods) { // TODO split it again and such
+        const mod_clone = mod_template.content.cloneNode(true);
+        const settings_div = mod_clone.querySelector(".mod-item")
+        let user_div = mod_div.querySelector(".mods-user")
+        let mod_name = settings_div.querySelector(".mod-item-name")
+        let mod_settings = settings_div.querySelector(".mod-item-settings")
         const mod_info = MODS[0].Mods.find(x => x.Acronym == mod.acronym)
-        settings += mod_info.Name + ":" + JSON.stringify(mod.settings)
+        // settings is in the form of {option: number|string|boolean} im pretty sure
+        let settings_text = ""
+        for (const setting of Object.entries(mod.settings)) {
+            settings_text += `${setting[0]}:${setting[1]}, `
+        }
+        if (mod.settings != null) {
+            empty = false
+            user_div.textContent = user != undefined ? user.username : user_id
+            mod_name.textContent = mod_info.Name
+            mod_settings.textContent = settings_text
+        }
+        mod_list.appendChild(mod_clone)
     }
-    mod_div.textContent = settings;
+    if (empty) {
+        if (cur != null) cur.remove() // delete it if previously modded
+        return;
+    }
     mod_div.dataset.user_id = user_id
     if (cur == null) verboseMods.appendChild(clone)
 }
