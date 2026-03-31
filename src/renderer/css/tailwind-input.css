@@ -40,6 +40,13 @@
 }
 .room-badge.visible { display: flex; }
 
+#debug-menu {
+    display: none;
+}
+#debug-menu.visible {
+    display: block;
+}
+
 #toast { z-index: 9999; transition: opacity 0.3s; }
 #toast.hidden { display: none; }
 
@@ -131,9 +138,6 @@
 }
 
 .event-log {
-  max-height: 50vh;
-  height: 50vh;
-  overflow-y: auto;
   font-size: 0.78rem;
   font-family: monospace;
   border-radius: 4px;

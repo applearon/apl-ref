@@ -5,3 +5,4 @@ scripts/IRefereeHubServer.cs
 scripts/IRefereeHubClient.cs
 out/
 src/renderer/css/tailwind.css
+src/renderer/mods.json

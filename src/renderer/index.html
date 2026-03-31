@@ -70,17 +70,19 @@
     </div>
 
     <!-- Rightbar -->
-    <div id="room-rightbar" class="scrollbar-hover bg-gray-200 dark:bg-gray-800 text-gray-800 dark:text-gray-200">
-      <div class="sidebar-section">
+    <div id="room-rightbar" class="fixed top-14 right-0 w-[var(--rightbar-width)] h-[calc(100vh-56px)] flex flex-col bg-gray-200 dark:bg-gray-800 text-gray-800 dark:text-gray-200 border-l border-gray-200">
+      <div class="p-4 flex-1 overflow-y-auto padding-16 scrollbar-hover">
         <h3 class="sidebar-title">User Mods</h3>
+        <div class="" id="mods-verbose-container">
+        </div>
       </div>
-      <div class="sidebar-section">
+      <div class="p-4 flex-2 overflow-y-auto border-t border-gray-300 scrollbar-hover">
           <h3 class="sidebar-title">Events</h3>
-          <div class="scrollbar-hover event-log" id="event-log">
+          <div class="event-log" id="event-log">
             <div class="event-placeholder">No events yet…</div>
           </div>
       </div>
-      <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-5 mb-4">
+      <div id="debug-menu" class="bg-white dark:bg-gray-800 rounded-lg shadow p-5 mb-4">
         <h2 class="text-lg font-medium mb-3">Debug</h2>
         <div class="action-row">
           <button id="ping-btn" class="bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 px-4 py-2 rounded text-sm text-gray-800 dark:text-gray-100">Send Ping</button>
@@ -394,6 +396,23 @@
         </div>
       </div>
     </template>
+
+    <template id="player-mods-verbose">
+      <div class="mods-container bg-gray-100 dark:bg-gray-700 p-3 rounded text-sm mb-2">
+        <div class="mods-user font-semibold text-gray-900 dark:text-gray-50 mb-3"></div>
+        <div class="mods-list flex flex-col gap-2"></div>
+      </div>
+    </template>
+
+    <template id="player-mod-item">
+      <div class="mod-item bg-gray-50 dark:bg-gray-800 p-2 rounded">
+        <div class="flex justify-between items-center mb-1">
+          <span class="mod-item-name text-xs px-2 py-0.5 bg-gray-200 dark:bg-gray-700 rounded text-gray-600 dark:text-gray-400 font-medium"></span>
+        </div>
+        <div class="mod-item-settings font-mono text-xs text-gray-500 dark:text-gray-400 break-all"></div>
+      </div>
+    </template>
+
     <template id="player-score">
       <div class="flex justify-between text-sm items-center gap-2">
         <span class="score-player-name truncate"></span>

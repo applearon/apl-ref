@@ -20,7 +20,10 @@ if (savedTheme === 'light') {
   document.documentElement.classList.remove('dark')
 }
 updateThemeIcon()
-
+let MODS;
+fetch('mods.json').then(mod_res => {
+    mod_res.json().then(mods => MODS = mods)
+})
 
 // Stored Data TODO: make this into a proper class
 let players = {};
@@ -239,6 +242,14 @@ function showToast(message, duration = 3000) {
      setTimeout(() => toast.classList.add('hidden'), duration)
 }
 
+
+function debugMode() {
+    showRoomActions()
+    showRoomCreation()
+    const ping = document.getElementById("debug-menu")
+    ping.classList.add('visible')
+}
+
 function addPlayer(user_id, player_status, name, team) {
     // "idle", "ready", "playing", "finished_play", "spectating"
     const team_class = "team-" + team.toLowerCase() // only red and blue or none
@@ -383,6 +394,48 @@ function refreshPlaylistItems() {
         addPlaylistItem(item.id, item.ruleset_id, item.beatmap_id, item.required_mods, item.allowed_mods, item.freestyle, item.was_played)
     }
 }
+
+
+function addVerboseMods(user_id, mods) { // might work, **definitely** needs testing
+    // TODO add the user's name to the UI & make it pretty
+    let user = players[user_id] ?? other_players[user_id] // other players is literally just for testing
+    const verboseMods = document.getElementById("mods-verbose-container");
+    const cur = verboseMods.querySelector(`[data-user_id="${user_id}"]`)
+    const template = document.getElementById("player-mods-verbose");
+    const mod_template = document.getElementById("player-mod-item")
+    const clone = template.content.cloneNode(true);
+    const mod_div = cur != null ? cur : clone.querySelector(".mods-container")
+    const mod_list = mod_div.querySelector(".mods-list")
+    let empty = true
+    mod_list.innerHTML = ""
+    for (const mod of mods) { // TODO split it again and such
+        const mod_clone = mod_template.content.cloneNode(true);
+        const settings_div = mod_clone.querySelector(".mod-item")
+        let user_div = mod_div.querySelector(".mods-user")
+        let mod_name = settings_div.querySelector(".mod-item-name")
+        let mod_settings = settings_div.querySelector(".mod-item-settings")
+        const mod_info = MODS[0].Mods.find(x => x.Acronym == mod.acronym)
+        // settings is in the form of {option: number|string|boolean} im pretty sure
+        let settings_text = ""
+        for (const setting of Object.entries(mod.settings)) {
+            settings_text += `${setting[0]}:${setting[1]}, `
+        }
+        if (mod.settings != null) {
+            empty = false
+            user_div.textContent = user != undefined ? user.username : user_id
+            mod_name.textContent = mod_info.Name
+            mod_settings.textContent = settings_text
+        }
+        mod_list.appendChild(mod_clone)
+    }
+    if (empty) {
+        if (cur != null) cur.remove() // delete it if previously modded
+        return;
+    }
+    mod_div.dataset.user_id = user_id
+    if (cur == null) verboseMods.appendChild(clone)
+}
+
 
 // Scores
 function addSoloScore(username, score) {
@@ -838,12 +891,14 @@ window.api.on.UserStatusChanged(info => {
     players[user_id].state = info.status
 })
 
-window.api.on.UserModsChanged(info => {
+window.api.on.UserModsChanged(info => { // TODO: check if when playlistItem changes/removes if user mods get reset
     const mods = info.mods
     const user_id = info.user_id
     const playerDiv = document.querySelector(`[data-user_id="${user_id}"]`)
     playerDiv.querySelector(".player-mods").textContent = mods.map(item => item.acronym).join(" ");
+    addVerboseMods(user_id, mods)
 })
+
 window.api.on.UserStyleChanged(info => {
     // idk man if your tourmament has freestyle you have bigger problems
     // TODO fix this i guess
@@ -896,3 +951,5 @@ window.api.api.onChatMessage(async buffer => {
           //}
     }
 })
+
+
