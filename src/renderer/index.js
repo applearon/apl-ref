@@ -420,13 +420,14 @@ function addVerboseMods(user_id, mods) { // might work, **definitely** needs tes
         for (const setting of Object.entries(mod.settings)) {
             settings_text += `${setting[0]}:${setting[1]}, `
         }
-        if (mod.settings != null) {
+        const undefault_settings = mod.settings != null && Object.entries(mod.settings).length != 0
+        if (undefault_settings) {
             empty = false
             user_div.textContent = user != undefined ? user.username : user_id
             mod_name.textContent = mod_info.Name
             mod_settings.textContent = settings_text
         }
-        mod_list.appendChild(mod_clone)
+        if (undefault_settings) mod_list.appendChild(mod_clone)
     }
     if (empty) {
         if (cur != null) cur.remove() // delete it if previously modded
@@ -824,15 +825,16 @@ document.getElementById('ping-btn').addEventListener('click', async () => {
 // chat parsing
 function commandHandler(username, message) {
     const commands = {
-        "!roll": () => {
-            const max = 100;
-            const roll = Math.floor(Math.random() * max) + 1; // add one so we're not indexing by 0
-            window.api.api.SendMessage(chat_channel_id, `${username} has rolled ${roll}.`)
+        "/roll": (max) => {
+            osu.Roll(currentRoomId, {max: parseInt(max)})
         }
     }
-    if (commands[message.trim()] != undefined) {
-        commands[message.trim()]();
+    let cmd = message.trim().split(' ')
+    if (commands[cmd[0]] != undefined) {
+        commands[cmd.shift()](...cmd);
+        return true;
     }
+    return false;
 }
 
 // ── Event listeners ────────────────────────────────────────────────────────
@@ -927,6 +929,18 @@ window.api.on.MatchCompleted(info => {
     addScore(currentRoomId, info.playlist_item_id)
 })
 
+window.api.on.RollCompleted(async info => {
+    let user = players[info.user_id] ?? other_players[info.user_id]
+    if (user != undefined) {
+        addChatMsg(`Rolled ${info.result}/${info.max}`, user.username, 'https://a.ppy.sh/3')
+    } else {
+        console.log("grabbing new player!!")
+        user = (await window.api.api.GetUser(info.user_id)).data
+        other_players[msg.sender_id] = user
+        addChatMsg(`Rolled ${info.result}/${info.max}`, user.username, 'https://a.ppy.sh/3')
+    }
+})
+
 window.api.api.onChatMessage(async buffer => {
     if (chat_channel_id == "") return;
     const data = JSON.parse(buffer)
@@ -937,18 +951,13 @@ window.api.api.onChatMessage(async buffer => {
             //console.log("ohmygah")
             console.log(msg.sender_id, msg.content)
             let user = players[msg.sender_id] ?? other_players[msg.sender_id]
-            if (user != undefined) {
-                addChatMsg(msg.content, user.username, user.avatar_url)
-            } else {
+            if (user == undefined) {
                 console.log("grabbing new player!!")
                 user = (await window.api.api.GetUser(msg.sender_id)).data
                 other_players[msg.sender_id] = user
-                addChatMsg(msg.content, user.username, user.avatar_url)
             }
-            commandHandler(user.username, msg.content)
-        } //else {
-          //  console.log(msg.sender_id, msg.content)
-          //}
+            if (!commandHandler(user.username, msg.content)) addChatMsg(msg.content, user.username, user.avatar_url)
+        }
     }
 })
 
