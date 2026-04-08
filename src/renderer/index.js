@@ -388,6 +388,22 @@ function addChatMsg(msg, username, pfp) {
 
 }
 
+function addSystemMsg(msg) {
+    document.getElementById("no-messages")?.remove()
+    const template = document.getElementById("sys-message")
+    const clone = template.content.cloneNode(true);
+    
+    clone.querySelector('.sys-message').textContent = msg
+    
+    const chatbox = document.getElementById("chat-messages")
+    chatbox.appendChild(clone)
+
+    if (chatbox.scrollHeight - chatbox.scrollTop - chatbox.clientHeight < 50) {
+        chatbox.scrollTop = chatbox.scrollHeight;
+    }
+
+}
+
 function refreshPlaylistItems() {
     document.getElementById("playlist-items").innerHTML = ""
     for (const item of Object.values(playlistItems)) {
@@ -932,12 +948,12 @@ window.api.on.MatchCompleted(info => {
 window.api.on.RollCompleted(async info => {
     let user = players[info.user_id] ?? other_players[info.user_id]
     if (user != undefined) {
-        addChatMsg(`Rolled ${info.result}/${info.max}`, user.username, 'https://a.ppy.sh/3')
+        addSystemMsg(`${user.username} rolled ${info.result}/${info.max}.`)
     } else {
         console.log("grabbing new player!!")
         user = (await window.api.api.GetUser(info.user_id)).data
         other_players[msg.sender_id] = user
-        addChatMsg(`Rolled ${info.result}/${info.max}`, user.username, 'https://a.ppy.sh/3')
+        addSystemMsg(`${user.username} rolled ${info.result}/${info.max}.`)
     }
 })
 
