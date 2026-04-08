@@ -686,12 +686,28 @@ document.getElementById('invite-player-confirm').addEventListener('click', async
         user_id = user.id
     }
     const result = await osu.InvitePlayer(currentRoomId, user_id)
-    //console.log(result)
+    if (result.data == null) {
+        result.data = user_id
+    }
     setResult('invite-player-result', result)
+    document.getElementById('popup-invite-username').value = ""
+    document.getElementById('popup-invite-userid').value = ""
+
     // we probably want to invite a lot at once
     // invitePlayerModal.classList.remove('visible')
 
     
+})
+
+document.getElementById('popup-invite-username').addEventListener('keydown', (event) => { // clicks when press enter
+  if (event.key === 'Enter') {
+    document.getElementById('invite-player-confirm').click()
+  }
+})
+document.getElementById('popup-invite-userid').addEventListener('keydown', (event) => { // clicks when press enter
+  if (event.key === 'Enter') {
+    document.getElementById('invite-player-confirm').click()
+  }
 })
 
 

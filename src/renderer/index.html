@@ -25,7 +25,7 @@
 
       <div class="sidebar-section">
         <h3 class="sidebar-title">
-          Playlist Items
+          Map Queue
           <button id="add-playlist-btn" class="leading-none py-0.5 px-3 ml-2 rounded bg-blue-500 text-white border-none cursor-pointer hover:bg-blue-600">+</button>
         </h3>
         <div id="playlist-items" class="playlist-items"></div>
@@ -59,7 +59,7 @@
         <div class="flex flex-wrap gap-2 mb-2">
           <button id="start-match-btn" class="bg-green-600 hover:bg-green-700 text-white px-3 py-1 rounded text-sm">Start</button>
           <button id="stop-countdown-btn" class="bg-orange-500 hover:bg-orange-600 text-white px-3 py-1 rounded text-sm">Stop</button>
-          <button id="abort-match-btn" class="bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded text-sm">Abort</button>
+          <button id="abort-match-btn" class="bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded text-sm">Abort Match</button>
         </div>
         <div class="text-xs text-gray-500 flex flex-col">
           <span id="start-match-result" class="result-msg"></span>
@@ -72,7 +72,7 @@
     <!-- Rightbar -->
     <div id="room-rightbar" class="fixed top-14 right-0 w-[var(--rightbar-width)] h-[calc(100vh-56px)] flex flex-col bg-gray-200 dark:bg-gray-800 text-gray-800 dark:text-gray-200 border-l border-gray-200">
       <div class="p-4 flex-1 overflow-y-auto padding-16 scrollbar-hover">
-        <h3 class="sidebar-title">User Mods</h3>
+        <h3 class="sidebar-title">Mod Settings</h3>
         <div class="" id="mods-verbose-container">
         </div>
       </div>
@@ -279,7 +279,7 @@
         <div class="flex flex-wrap gap-3 mb-3">
           <div class="w-full md:w-1/3">
             <label class="text-sm text-gray-600 dark:text-gray-400 block mb-1">Ruleset ID</label>
-            <input id="make-ruleset-id" type="number" placeholder="0=osu! 1=taiko 2=catch 3=mania" class="w-full border border-gray-300 dark:border-gray-600 rounded px-2 py-1 bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-100" />
+            <input id="make-ruleset-id" type="number" value="0" placeholder="0=osu! 1=taiko 2=catch 3=mania" class="w-full border border-gray-300 dark:border-gray-600 rounded px-2 py-1 bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-100" />
           </div>
           <div class="w-full md:w-1/3">
             <label class="text-sm text-gray-600 dark:text-gray-400 block mb-1">Beatmap ID</label>
