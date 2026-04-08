@@ -101,10 +101,40 @@ document.getElementById('settings-trigger').addEventListener('click', (e) => {
 })
 
 document.addEventListener('click', (e) => {
+  // hide settings
   const dropdown = document.getElementById('settings-dropdown')
   const trigger = document.getElementById('settings-trigger')
   if (!dropdown.contains(e.target) && !trigger.contains(e.target)) {
     hideSettingsDropdown()
+  }
+  // hide playlist modal
+  const addPlaylistModal = document.getElementById('add-playlist-modal')
+  let modalContent = addPlaylistModal.querySelector(".modal-content")
+  const addPlaylistTrigger = document.getElementById('add-playlist-btn')
+  if (!modalContent.contains(e.target) && !addPlaylistTrigger.contains(e.target)) {
+    addPlaylistModal.classList.remove('visible')
+  }
+  // edit playlist modal
+  const editPlaylistModal = document.getElementById('edit-playlist-modal')
+  modalContent = editPlaylistModal.querySelector(".modal-content")
+  const editPlaylistTrigger = document.getElementById('edit-playlist-btn')
+  if (editPlaylistTrigger && !modalContent.contains(e.target) && !editPlaylistTrigger.contains(e.target)) {
+    editPlaylistModal.classList.remove('visible')
+  }
+
+  // hide invite player
+  const invitePlayerModal = document.getElementById('invite-player-modal')
+  modalContent = invitePlayerModal.querySelector(".modal-content")
+  const invitePlayerTrigger = document.getElementById('invite-player-btn')
+  if (invitePlayerTrigger && !modalContent.contains(e.target) && !invitePlayerTrigger.contains(e.target)) {
+    invitePlayerModal.classList.remove('visible')
+  }
+  // hide invite ref
+  const inviteRefModal = document.getElementById('invite-ref-modal')
+  modalContent = inviteRefModal.querySelector(".modal-content")
+  const inviteRefTrigger = document.getElementById('add-referee')
+  if (inviteRefTrigger && !modalContent.contains(e.target) && !inviteRefTrigger.contains(e.target)) {
+    inviteRefModal.classList.remove('visible')
   }
 })
 
