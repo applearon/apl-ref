@@ -17,7 +17,8 @@ function createMainWindow() {
       preload: path.join(__dirname, '..', '..', 'preload.js'),
       contextIsolation: true,
       nodeIntegration: false
-    }
+    },
+    icon: path.join(__dirname, '..', '..', 'assets', 'aplreflogo.png')
   })
   mainWindow.loadFile(path.join(__dirname, '..', 'renderer', 'index.html'))
 }

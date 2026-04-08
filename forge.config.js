@@ -4,11 +4,17 @@ const { FuseV1Options, FuseVersion } = require('@electron/fuses');
 module.exports = {
   packagerConfig: {
     asar: true,
+    icon: 'assets/aplreflogo'
   },
   rebuildConfig: {},
   makers: [
     {
       name: '@electron-forge/maker-zip',
+      config: {
+        options: {
+          icon: 'assets/aplreflogo.png'
+        }
+      },
       platforms: ['darwin', 'linux', 'win32'],
     },
   ],
