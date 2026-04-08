@@ -29,6 +29,7 @@ fetch('mods.json').then(mod_res => {
 let players = {};
 let other_players = {}; // removes calling too much, should be partially(?) replaced with referee list
 let playlistItems = {};
+let beatmaps = {};
 let chat_channel_id = ""
 let connected = false;
 
@@ -159,6 +160,14 @@ for (const cmd of objs) {
     cmd[1](info => {
         logEvent(cmd[0], info)
     })
+}
+
+async function GetBeatmap(beatmap_id) {
+    if (beatmaps[beatmap_id]) return beatmaps[beatmap_id]
+    map = await window.api.api.GetBeatmap(beatmap_id)
+    console.log("grabbing beatmap data")
+    beatmaps[beatmap_id] = map.data
+    return map.data
 }
 
 function setResult(id, result) {
@@ -387,7 +396,7 @@ async function addPlaylistItem(playlist_id, ruleset_id, beatmap_id, required_mod
     })
 
     document.getElementById("playlist-items").appendChild(clone)
-    const beatmap = (await window.api.api.GetBeatmap(beatmap_id)).data // only do this if the beatmap actually changes
+    const beatmap = await GetBeatmap(beatmap_id)
     document.querySelector(`[class~="${playlist_id}"]`).querySelector('.playlist-item-id').textContent = beatmap.beatmapset.title + ` [${beatmap.version}]`
 }
 

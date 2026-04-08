@@ -15,9 +15,6 @@ New Features:
 - Rewrite it to support operating multiple rooms
 - Add more error handling on the osu api side
 
-- Calling GetBeatmap more than needs to happen (ie PlaylistItemEdit or whatever but the beatmap_id stays the same)
-
-
 Bugs:
 - Playlist item score lookup fails hard (fixed, needs testing on team_versus)
 - Joining room doesn't properly set status (done, needs testing)
