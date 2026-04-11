@@ -765,7 +765,6 @@ document.getElementById('make-room-btn').addEventListener('click', async () => {
     beatmap_id: int('make-beatmap-id'),
     name: str('make-room-name')
   })
-  setResult('make-room-result', result)
   if (result.success && result.data) {
     showRoomActions(result.data.room_id, result.data.chat_channel_id, result.data.name, result.data.password)
     hideRoomCreation()
@@ -782,7 +781,6 @@ document.getElementById('make-room-btn').addEventListener('click', async () => {
 document.getElementById('join-room-btn').addEventListener('click', async () => {
   const roomId = int('join-room-id')
   const result = await osu.JoinRoom(roomId)
-  setResult('join-room-result', result)
   if (result.success) {
     showRoomActions(roomId, result.data.chat_channel_id, result.data.name, result.data.password)
     hideRoomCreation()
@@ -805,7 +803,6 @@ document.getElementById('change-settings-btn').addEventListener('click', async (
   if (name) settings.name = name
   if (password) settings.password = password
   const result = await osu.ChangeRoomSettings(currentRoomId, settings)
-  setResult('change-settings-result', result)
   hideSettingsDropdown()
 })
 
@@ -814,17 +811,14 @@ document.getElementById('start-match-btn').addEventListener('click', async () =>
   const result = await osu.StartMatch(currentRoomId, {
       'countdown': int('start-match-seconds')
   })
-  setResult('start-match-result', result)
 })
 
 document.getElementById('stop-countdown-btn').addEventListener('click', async () => {
   const result = await osu.StopMatchCountdown(currentRoomId)
-  setResult('stop-countdown-result', result)
 })
 
 document.getElementById('abort-match-btn').addEventListener('click', async () => {
   const result = await osu.AbortMatch(currentRoomId)
-  setResult('abort-match-result', result)
 })
 
 // ── Leave / Close Room (with confirmation) ─────────────────────────────────
@@ -845,7 +839,6 @@ document.getElementById('leave-room-btn').addEventListener('click', async () => 
 
     document.getElementById("chat-messages").innerHTML = '<div id="no-messages" class="text-gray-500 dark:text-gray-400 text-sm italic">No messages yet...</div>'
   } else {
-    setResult('join-room-result', result)
   }
 })
 
@@ -866,7 +859,6 @@ document.getElementById('close-room-btn').addEventListener('click', async () => 
 
     document.getElementById("chat-messages").innerHTML = '<div id="no-messages" class="text-gray-500 dark:text-gray-400 text-sm italic">No messages yet...</div>'
   } else {
-    setResult('join-room-result', result)
   }
 })
 
