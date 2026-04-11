@@ -301,8 +301,9 @@ function addPlayer(user_id, player_status, name, team) {
     clone.getElementById("player-mods").textContent = "N/A"
     teamSpan.addEventListener("click", async () => {
         // TODO change to if it's head-to-head
-        // done, untested
-        if(teamSpan.classList.contains("team-none")) return;
+        //if(teamSpan.classList.contains("team-none")) return;
+        //^ i think it'll just fail?? maybe check specifically if the mode is head-to-head
+        //cant do this cause something something they start out as grey
         const result = await osu.MoveUser(currentRoomId, {
             user_id,
             team: teamSpan.classList.contains("team-red") ? "blue" : "red"
