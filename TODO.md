@@ -1,5 +1,6 @@
 UI fixes:
-- Switching teams should be done with a button on the User (done, still needs to be tested)
+- Switching teams should be done with a button on the User (broken when originally joining/when grey team)
+    - might not properly change since username lookup takes some time, maybe force it to queue? or fallback to user_id until the lookup suceeds)
 - Player Mod Row Should also show freestyle
 - Add ability to change Mod Settings
 - Add Ban User to the UI
@@ -14,7 +15,11 @@ New Features:
 - Referee Invited popup to join up
 - Rewrite it to support operating multiple rooms
 - Add more error handling on the osu api side
+- system message when everyone is ready
+- remove all the OK: null and stuff since that's all in event log now
+- resize scores or starting size or something to make it not scroll down when scores are added
+    - (make it scroll in its own thing?)
 
 Bugs:
-- Playlist item score lookup fails hard (fixed, needs testing on team_versus)
 - Joining room doesn't properly set status (done, needs testing)
+- Make scores comma seperated

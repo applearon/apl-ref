@@ -968,7 +968,8 @@ window.api.on.UserModsChanged(info => { // TODO: check if when playlistItem chan
     const mods = info.mods
     const user_id = info.user_id
     const playerDiv = document.querySelector(`[data-user_id="${user_id}"]`)
-    playerDiv.querySelector(".player-mods").textContent = mods.map(item => item.acronym).join(" ");
+    let mod_str = mods.map(item => item.acronym).join(" ");
+    playerDiv.querySelector(".player-mods").textContent = mod_str ? mod_str : "N/A"
     addVerboseMods(user_id, mods)
 })
 
@@ -980,6 +981,8 @@ window.api.on.UserStyleChanged(info => {
 window.api.on.UserTeamChanged(info => {
     const user_id = info.user_id;
     const user_UI = document.querySelector(`[data-user_id="${user_id}"]`).querySelector(".player-team")
+    console.log(user_id)
+    console.log(user_UI)
     user_UI.classList.remove("team-none", "team-red", "team-blue")
     user_UI.classList.add("team-" + info.team)
 })
