@@ -366,8 +366,6 @@ async function addPlaylistItem(playlist_id, ruleset_id, beatmap_id, required_mod
 
     const edit_btn = clone.querySelector(".edit-playlist-btn")
     edit_btn.addEventListener('click', () => {
-        const playlistItem = clone.querySelector(".playlist-item")
-      
         const modes = ["osu!", "taiko", "catch", "mania"]
       
         const textElements = edit_btn.parentNode.parentNode.parentNode.querySelectorAll(".playlist-item-text")
@@ -519,11 +517,11 @@ function addTeamSoloScore(username, score, team) {
 function scoreMode(head_to_head) {
     const teams = document.querySelectorAll(".score")
     if (head_to_head) {
-        for (team of teams) {
+        for (const team of teams) {
             team.classList.remove("visible")
         }
     } else {
-        for (team of teams) {
+        for (const team of teams) {
             team.classList.add("visible")
         }
     }
@@ -531,7 +529,8 @@ function scoreMode(head_to_head) {
 
 function removeAllScores() {
     document.querySelector(".score-players-solo").innerHTML = ""
-    for (team of team_div = document.querySelectorAll(".score")) {
+    const team_div = document.querySelectorAll(".score");
+    for (const team of team_div) {
         team.querySelector('.score-players').innerHTML = ""
     }
 }
@@ -550,7 +549,7 @@ async function addScore(room_id, playlist_id) {
     }
     let red_score = 0
     let blue_score = 0
-    for (score of scores.scores) {
+    for (const score of scores.scores) {
         if (head_to_head) {
             addSoloScore(score.user.username, score.total_score)
         } else {
@@ -839,6 +838,7 @@ document.getElementById('leave-room-btn').addEventListener('click', async () => 
 
         document.getElementById("chat-messages").innerHTML = '<div id="no-messages" class="text-gray-500 dark:text-gray-400 text-sm italic">No messages yet...</div>'
     } else {
+        console.log("How the hell")
     }
 })
 
@@ -859,6 +859,7 @@ document.getElementById('close-room-btn').addEventListener('click', async () => 
 
         document.getElementById("chat-messages").innerHTML = '<div id="no-messages" class="text-gray-500 dark:text-gray-400 text-sm italic">No messages yet...</div>'
     } else {
+        console.log("How the hell")
     }
 })
 
@@ -1003,7 +1004,7 @@ window.api.on.RollCompleted(async info => {
     } else {
         console.log("grabbing new player!!")
         user = (await window.api.api.GetUser(info.user_id)).data
-        other_players[msg.sender_id] = user
+        other_players[info.user_id] = user
         addSystemMsg(`${user.username} rolled ${info.result}/${info.max}.`)
     }
 })
@@ -1013,7 +1014,7 @@ window.api.api.onChatMessage(async buffer => {
     const data = JSON.parse(buffer)
     if (data.event != "chat.message.new") return;
     const messages = data.data.messages
-    for (msg of messages) {
+    for (const msg of messages) {
         if (msg.channel_id == chat_channel_id) {
             //console.log("ohmygah")
             console.log(msg.sender_id, msg.content)
