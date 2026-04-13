@@ -37,37 +37,39 @@ let editing_playlist_item = 0;
 let password = ""
 let room_name = ""
 
+async function ircStyleUsername(str) { // old mode is #14573534 for user id, and username otherwise
+    if (str[0] == '#') {
+        return parseInt(str.substring(1))
+    }
+    return (await GetUser(str)).id
+}
 
-// Console mode logic TODO
-function cmdRunner(cmd, ...args) {
-    // "Ping", "MakeRoom", "JoinRoom", "LeaveRoom", "CloseRoom", "InvitePlayer", "KickPlayer", "BanUser", "AddReferee", "RemoveReferee", "ChangeRoomSettings", "EditCurrentPlaylistItem", "AddPlaylistItem", "EditPlaylistItem", "RemovePlaylistItem", "MoveUser", "StartMatch", "StopMatchCountdown", "AbortMatch"
-    // im like 90% sure all of these are in the form of (room_id, json_with_stuff) but like i should double check...
-    const map = {
-        "name": {},
-        "invite": {},
-        "lock": {}, // idt this is in prod yet
-        "unlock": {},
-        "set": {"ChangeRoomSettings": {head_to_head: args[0] == 0 ? "head_to_head" : "team_versus"}},
-        "start": {"StartMatch": {countdown: args[0]}},
-        "abort": {"AbortMatch": {}},
-        "team": {"MoveCustom": {user_id: idFromUsername(args[0]), team: args[0]}, custom: true},
-        "map": {"EditCurrentPlaylistItem": {beatmap_id: "_0", ruleset_id: "_1"}},
-        "mods": {"EditCurrentPlaylistItem": {required_mods: args.map((x) => {return {acronym: x}})}}, // TODO this doesn't work with FM
-        "timer": {}, // need custom logic
-        "kick": {"KickPlayer": idFromUsername(args[0])},
-        "ban": {"BanUser": idFromUsername(args[0])}, // not in prod either? idk
-        "password": {"ChangeRoomSettings": {password: args[0]}},
-        "addref": {"AddReferee": args[0]},
-        "removeref": {"RemoveReferee": args[0]},
-        "listrefs": {}, // need custom logic
-        "close": {"CloseRoom": null}, // needs no other args
-        "help": {}, // expected 0 args and also needs custom logic
+// TODO most of these don't update the UI
+async function cmdRunner(cmd, ...args) {
+    const map = { 
+        "name": () => {return {"ChangeRoomSettings": {name: args[0]}}},
+        "invite": async () => {return {"InvitePlayer": await ircStyleUsername(args[0])}},
+        "lock": () => {return {"SetLockState": {"locked": true}}},
+        "unlock": () => {return {"SetLockState": {"locked": false}}},
+        "set": () => {return {"ChangeRoomSettings": {type: args[0] == 0 ? "head_to_head" : "team_versus"}}},
+        "start": () => {return {"StartMatch": {countdown: args[0]}}},
+        "abort": () => {return {"AbortMatch": {}}},
+        "team": async () => {return {"MoveCustom": {user_id: await ircStyleUsername(args[0]), team: args[0]}, custom: true}},
+        "map": () => {return {"EditCurrentPlaylistItem": {beatmap_id: parseInt(args[0]), ruleset_id: parseInt(args[1]) ?? 0 }}},
+        "mods": () => {return {"EditCurrentPlaylistItem": handleModChange(args)}},
+        "timer": ()=> {}, // need custom logic
+        "kick": async () => {return {"KickPlayer": await ircStyleUsername(args[0])}},
+        "ban": async () => {return {"BanUser": await ircStyleUsername(args[0])}},
+        "password": () => {return {"ChangeRoomSettings": {password: args[0]}}},
+        "addref": async () => {return {"AddReferee": await ircStyleUsername(args[0])}},
+        "removeref": async () => {return {"RemoveReferee": await ircStyleUsername(args[0])}},
+        "listrefs": () => {}, // need custom logic
+        "close": () => {return {"CloseRoom": null}}, // needs to update UI
+        "help": () => {}, // expected 0 args and also needs custom logic
     }
-    for (const x of Object.entries(map[cmd])) {
-        console.log(x, cmd)
-        osu[x[0]](x[1])
+    for (const x of Object.entries(await map[cmd]())) {
+        osu[x[0]](currentRoomId, x[1])
     }
-    // in da loop if undefined then assume it can be skipped? or maybe most of them can just be okay with null i should double check
 }
 
 function handleModChange(args) {
@@ -162,6 +164,21 @@ for (const cmd of objs) {
     })
 }
 
+async function GetUser(user_id, normal) { // normal is true if it's a player, false if it's a random
+    normal = normal ?? false
+    user_id = idFromUsername(user_id) ?? user_id
+    let user = players[user_id] ?? other_players[user_id]
+    if (user != undefined) {
+        return user
+    } else {
+        console.log("grabbing new player!!")
+        user = (await window.api.api.GetUser(user_id)).data
+        if (normal) players[user.id] = user
+        if (!normal) other_players[user.id] = user
+        return user
+    }
+}
+
 async function GetBeatmap(beatmap_id) {
     if (beatmaps[beatmap_id]) return beatmaps[beatmap_id]
     let map = await window.api.api.GetBeatmap(beatmap_id)
@@ -226,7 +243,7 @@ function idFromUsername(username) {
         return user;
     } else {
         console.log("failed to grab player idk what you just did")
-        return -1;
+        return null;
     }
 }
 
@@ -445,6 +462,7 @@ function addSystemMsg(msg) {
 function refreshPlaylistItems() {
     document.getElementById("playlist-items").innerHTML = ""
     for (const item of Object.values(playlistItems)) {
+        console.log(item)
         addPlaylistItem(item.id, item.ruleset_id, item.beatmap_id, item.required_mods, item.allowed_mods, item.freestyle, item.was_played)
     }
 }
@@ -707,6 +725,14 @@ document.getElementById('invite-player-confirm').addEventListener('click', async
 
     
 })
+const toggleLockBtn = document.getElementById('toggle-lock-btn')
+toggleLockBtn.addEventListener('click', async () => {
+    const unlocked = toggleLockBtn.textContent == "Unlocked"
+    const result = await osu.SetLockState(currentRoomId, {"locked": !unlocked});
+    if (result.success) {
+        toggleLockBtn.textContent = (!unlocked) ? "Unlocked" : "Locked";
+    }
+})
 
 document.getElementById('popup-invite-username').addEventListener('keydown', (event) => { // clicks when press enter
     if (event.key === 'Enter') {
@@ -892,11 +918,14 @@ function commandHandler(username, message) {
     const commands = {
         "/roll": (max) => {
             osu.Roll(currentRoomId, {max: parseInt(max)})
+        },
+        "!mp": (args) => {
+            cmdRunner(args.shift(), ...args)
         }
     }
     let cmd = message.trim().split(' ')
     if (commands[cmd[0]] != undefined) {
-        commands[cmd.shift()](...cmd);
+        commands[cmd.shift()](cmd);
         return true;
     }
     return false;
@@ -904,7 +933,7 @@ function commandHandler(username, message) {
 
 // ── Event listeners ────────────────────────────────────────────────────────
 window.api.on.UserJoined(async info => {
-    const user = await window.api.api.GetUser(info.user_id)
+    const user = await GetUser(info.user_id)
     console.log(user.data.username, "has joined!!")
     addPlayer(info.user_id, "idle", user.data.username, "none")
     players[info.user_id] = user.data
@@ -998,15 +1027,8 @@ window.api.on.MatchCompleted(info => {
 })
 
 window.api.on.RollCompleted(async info => {
-    let user = players[info.user_id] ?? other_players[info.user_id]
-    if (user != undefined) {
-        addSystemMsg(`${user.username} rolled ${info.result}/${info.max}.`)
-    } else {
-        console.log("grabbing new player!!")
-        user = (await window.api.api.GetUser(info.user_id)).data
-        other_players[info.user_id] = user
-        addSystemMsg(`${user.username} rolled ${info.result}/${info.max}.`)
-    }
+    let user = await GetUser(info.user_id)
+    addSystemMsg(`${user.username} rolled ${info.result}/${info.max}.`)
 })
 
 window.api.api.onChatMessage(async buffer => {
@@ -1018,12 +1040,7 @@ window.api.api.onChatMessage(async buffer => {
         if (msg.channel_id == chat_channel_id) {
             //console.log("ohmygah")
             console.log(msg.sender_id, msg.content)
-            let user = players[msg.sender_id] ?? other_players[msg.sender_id]
-            if (user == undefined) {
-                console.log("grabbing new player!!")
-                user = (await window.api.api.GetUser(msg.sender_id)).data
-                other_players[msg.sender_id] = user
-            }
+            let user = await GetUser(msg.sender_id)
             if (!commandHandler(user.username, msg.content)) addChatMsg(msg.content, user.username, user.avatar_url)
         }
     }

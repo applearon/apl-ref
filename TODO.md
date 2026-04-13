@@ -23,3 +23,4 @@ New Features:
 Bugs:
 - Joining room doesn't properly set status (done, needs testing)
 - Make scores comma seperated
+- Room Settings UI element (and maybe others) aren't being updated on the requisite Events
