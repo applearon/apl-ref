@@ -25,7 +25,7 @@ function readConfig() {
     }
     return config
   } catch (err) { // if something's gone wrong, ggs
-    throw new Error(`Failed to read config.json: ${err.message}`)
+    throw new Error(`Failed to read config.json: ${err.message}`, {cause: err})
   }
 }
 

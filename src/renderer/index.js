@@ -17,7 +17,7 @@ themeToggle.addEventListener('click', () => {
 // Load saved theme
 const savedTheme = localStorage.getItem('theme')
 if (savedTheme === 'light') {
-  document.documentElement.classList.remove('dark')
+    document.documentElement.classList.remove('dark')
 }
 updateThemeIcon()
 let MODS;
@@ -54,8 +54,8 @@ function cmdRunner(cmd, ...args) {
         "map": {"EditCurrentPlaylistItem": {beatmap_id: "_0", ruleset_id: "_1"}},
         "mods": {"EditCurrentPlaylistItem": {required_mods: args.map((x) => {return {acronym: x}})}}, // TODO this doesn't work with FM
         "timer": {}, // need custom logic
-        "kick": {"KickPlayer": idFromUsername(arg[0])},
-        "ban": {"BanUser": idFromUsername(arg[0])}, // not in prod either? idk
+        "kick": {"KickPlayer": idFromUsername(args[0])},
+        "ban": {"BanUser": idFromUsername(args[0])}, // not in prod either? idk
         "password": {"ChangeRoomSettings": {password: args[0]}},
         "addref": {"AddReferee": args[0]},
         "removeref": {"RemoveReferee": args[0]},
@@ -72,7 +72,7 @@ function cmdRunner(cmd, ...args) {
 
 function handleModChange(args) {
     // this is so stupid
-    const fm = x.map((x) => x.toLowerCase()).includes('freemod')
+    const fm = args.map((x) => x.toLowerCase()).includes('freemod')
     return {
         required_mods: fm ? null : args.map((x) => {return {acronym: x}}),
         allowed_mods: fm ? [ 'hd', 'hr', 'ez', 'fl', 'rx', 'so', 'nf', 'ap' ] : null // assuming only want normal mods..
@@ -164,7 +164,7 @@ for (const cmd of objs) {
 
 async function GetBeatmap(beatmap_id) {
     if (beatmaps[beatmap_id]) return beatmaps[beatmap_id]
-    map = await window.api.api.GetBeatmap(beatmap_id)
+    let map = await window.api.api.GetBeatmap(beatmap_id)
     console.log("grabbing beatmap data")
     beatmaps[beatmap_id] = map.data
     return map.data

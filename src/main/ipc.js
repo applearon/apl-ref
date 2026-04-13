@@ -48,7 +48,7 @@ function createQueryHandler(getRefereeClient, queryFn) {
   }
 }
 
-function setupIpcHandlers(getRefereeClient, getMainWindow) {
+function setupIpcHandlers(getRefereeClient) {
     ipcMain.handle('get-api-data', async () => {
         return [CMDS_SET, EVENTS]
     })
@@ -131,7 +131,7 @@ function setupWSEvents(accessToken, sendFunc) {
     const headers = { Authorization: `Bearer ${accessToken}`};
     
     const ws = new WebSocket('wss://notify.ppy.sh', [], { headers });
-    ws.on('open', (_) => {
+    ws.on('open', () => {
         ws.send(JSON.stringify({ event: 'chat.start' }));
     })
     ws.on('message', (buffer) => {

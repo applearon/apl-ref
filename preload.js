@@ -1,6 +1,6 @@
 const { contextBridge, ipcRenderer } = require('electron')
 
-const API_DATA = ipcRenderer.invoke('get-api-data').then(API_DATA => {
+ipcRenderer.invoke('get-api-data').then(API_DATA => {
     const COMMANDS = API_DATA[0];
     const EVENTS = API_DATA[1];
     

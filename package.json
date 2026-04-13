@@ -21,9 +21,13 @@
     "@electron-forge/plugin-auto-unpack-natives": "^7.11.1",
     "@electron-forge/plugin-fuses": "^7.11.1",
     "@electron/fuses": "^1.8.0",
+    "@eslint/js": "^10.0.1",
+    "@stylistic/eslint-plugin": "^5.10.0",
     "autoprefixer": "^10.4.27",
     "electron": "^40.7.0",
     "electron-prebuilt-compile": "^8.2.0",
+    "eslint": "^10.2.0",
+    "globals": "^17.5.0",
     "postcss": "^8.5.8",
     "tailwindcss": "^4.2.1"
   },

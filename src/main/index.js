@@ -40,7 +40,7 @@ function createLoginWindow(authUrl) {
   return win
 }
 
-function createConfigPopup(authUrl) {
+function createConfigPopup() {
   const win = new BrowserWindow({
     width: 600,
     height: 700,
@@ -99,7 +99,6 @@ async function cleanup() {
 function start() {
   setupIpcHandlers(
     () => refereeClient,
-    () => mainWindow
   )
   // Prevent Electron from quitting automatically when windows close during
   // the OAuth flow. Once the main window is open, cleanup() takes over.
