@@ -2,16 +2,16 @@
 const themeToggle = document.getElementById('theme-toggle')
 
 function updateThemeIcon() {
-  const isDark = document.documentElement.classList.contains('dark')
-  console.log(isDark)
-  themeToggle.textContent = isDark ? '☀️' : '🌙'
+    const isDark = document.documentElement.classList.contains('dark')
+    console.log(isDark)
+    themeToggle.textContent = isDark ? '☀️' : '🌙'
 }
 
 themeToggle.addEventListener('click', () => {
-  const html = document.documentElement
-  html.classList.toggle('dark')
-  localStorage.setItem('theme', html.classList.contains('dark') ? 'dark' : 'light')
-  updateThemeIcon()
+    const html = document.documentElement
+    html.classList.toggle('dark')
+    localStorage.setItem('theme', html.classList.contains('dark') ? 'dark' : 'light')
+    updateThemeIcon()
 })
 
 // Load saved theme
@@ -82,61 +82,61 @@ function handleModChange(args) {
 // ── UI helpers ──────────────────────────────────────────────────────────────
 
 function showSettingsDropdown() {
-  document.getElementById('settings-name').value = room_name
-  document.getElementById('settings-password').value = password
-  document.getElementById('settings-dropdown').classList.add('visible')
+    document.getElementById('settings-name').value = room_name
+    document.getElementById('settings-password').value = password
+    document.getElementById('settings-dropdown').classList.add('visible')
 }
 
 function hideSettingsDropdown() {
-  document.getElementById('settings-dropdown').classList.remove('visible')
+    document.getElementById('settings-dropdown').classList.remove('visible')
 }
 
 document.getElementById('settings-trigger').addEventListener('click', (e) => {
-  e.stopPropagation()
-  const dropdown = document.getElementById('settings-dropdown')
-  if (dropdown.classList.contains('visible')) {
-    hideSettingsDropdown()
-  } else {
-    showSettingsDropdown()
-  }
+    e.stopPropagation()
+    const dropdown = document.getElementById('settings-dropdown')
+    if (dropdown.classList.contains('visible')) {
+        hideSettingsDropdown()
+    } else {
+        showSettingsDropdown()
+    }
 })
 
 document.addEventListener('click', (e) => {
-  // hide settings
-  const dropdown = document.getElementById('settings-dropdown')
-  const trigger = document.getElementById('settings-trigger')
-  if (!dropdown.contains(e.target) && !trigger.contains(e.target)) {
-    hideSettingsDropdown()
-  }
-  // hide playlist modal
-  const addPlaylistModal = document.getElementById('add-playlist-modal')
-  let modalContent = addPlaylistModal.querySelector(".modal-content")
-  const addPlaylistTrigger = document.getElementById('add-playlist-btn')
-  if (!modalContent.contains(e.target) && !addPlaylistTrigger.contains(e.target)) {
-    addPlaylistModal.classList.remove('visible')
-  }
-  // edit playlist modal
-  const editPlaylistModal = document.getElementById('edit-playlist-modal')
-  modalContent = editPlaylistModal.querySelector(".modal-content")
-  const editPlaylistTrigger = document.getElementById('edit-playlist-btn')
-  if (editPlaylistTrigger && !modalContent.contains(e.target) && !editPlaylistTrigger.contains(e.target)) {
-    editPlaylistModal.classList.remove('visible')
-  }
+    // hide settings
+    const dropdown = document.getElementById('settings-dropdown')
+    const trigger = document.getElementById('settings-trigger')
+    if (!dropdown.contains(e.target) && !trigger.contains(e.target)) {
+        hideSettingsDropdown()
+    }
+    // hide playlist modal
+    const addPlaylistModal = document.getElementById('add-playlist-modal')
+    let modalContent = addPlaylistModal.querySelector(".modal-content")
+    const addPlaylistTrigger = document.getElementById('add-playlist-btn')
+    if (!modalContent.contains(e.target) && !addPlaylistTrigger.contains(e.target)) {
+        addPlaylistModal.classList.remove('visible')
+    }
+    // edit playlist modal
+    const editPlaylistModal = document.getElementById('edit-playlist-modal')
+    modalContent = editPlaylistModal.querySelector(".modal-content")
+    const editPlaylistTrigger = document.getElementById('edit-playlist-btn')
+    if (editPlaylistTrigger && !modalContent.contains(e.target) && !editPlaylistTrigger.contains(e.target)) {
+        editPlaylistModal.classList.remove('visible')
+    }
 
-  // hide invite player
-  const invitePlayerModal = document.getElementById('invite-player-modal')
-  modalContent = invitePlayerModal.querySelector(".modal-content")
-  const invitePlayerTrigger = document.getElementById('invite-player-btn')
-  if (invitePlayerTrigger && !modalContent.contains(e.target) && !invitePlayerTrigger.contains(e.target)) {
-    invitePlayerModal.classList.remove('visible')
-  }
-  // hide invite ref
-  const inviteRefModal = document.getElementById('invite-ref-modal')
-  modalContent = inviteRefModal.querySelector(".modal-content")
-  const inviteRefTrigger = document.getElementById('add-referee')
-  if (inviteRefTrigger && !modalContent.contains(e.target) && !inviteRefTrigger.contains(e.target)) {
-    inviteRefModal.classList.remove('visible')
-  }
+    // hide invite player
+    const invitePlayerModal = document.getElementById('invite-player-modal')
+    modalContent = invitePlayerModal.querySelector(".modal-content")
+    const invitePlayerTrigger = document.getElementById('invite-player-btn')
+    if (invitePlayerTrigger && !modalContent.contains(e.target) && !invitePlayerTrigger.contains(e.target)) {
+        invitePlayerModal.classList.remove('visible')
+    }
+    // hide invite ref
+    const inviteRefModal = document.getElementById('invite-ref-modal')
+    modalContent = inviteRefModal.querySelector(".modal-content")
+    const inviteRefTrigger = document.getElementById('add-referee')
+    if (inviteRefTrigger && !modalContent.contains(e.target) && !inviteRefTrigger.contains(e.target)) {
+        inviteRefModal.classList.remove('visible')
+    }
 })
 
 // ── State ─────────────────────────────────────────────────────────────────
@@ -171,51 +171,51 @@ async function GetBeatmap(beatmap_id) {
 }
 
 function setResult(id, result) {
-  const el = document.getElementById(id)
-  if (!el) return
-  if (result.success) {
-    el.className = 'result-msg ok'
-    el.textContent = 'OK' + (result.data !== undefined ? ': ' + JSON.stringify(result.data) : '')
-  } else {
-    el.className = 'result-msg err'
-    el.textContent = 'Error: ' + result.error
-  }
+    const el = document.getElementById(id)
+    if (!el) return
+    if (result.success) {
+        el.className = 'result-msg ok'
+        el.textContent = 'OK' + (result.data !== undefined ? ': ' + JSON.stringify(result.data) : '')
+    } else {
+        el.className = 'result-msg err'
+        el.textContent = 'Error: ' + result.error
+    }
 }
 
 async function logEvent(name, data) {
-  let isRes = false;
-  if (data instanceof Promise) { // if it's a method we sent
-      data = await data
-      isRes = true;
-  }
-  console.log(name, data)
-  const log = document.getElementById('event-log')
-  const placeholder = log.querySelector('.event-placeholder')
-  if (placeholder) placeholder.remove()
-  const entry = document.createElement('div')
-  entry.className = 'event-entry'
-  const time = document.createElement('div');
-  time.textContent = name + ': [' + new Date().toLocaleTimeString() + ']'
-  if (isRes) {
-      time.textContent += data.success ? " Succeeded" : " Failed"
-      data = data.success ? data.data : data.error
-  } else {
-      delete data.room_id // dont need since this client only works 1 room at a time
-  }
-  const logData = document.createElement('div');
-  if (data == null) {data = ''}
-  if (typeof data == 'string') {
-    logData.textContent = data
-  } else {
-      for(const [key, value] of Object.entries(data)) {
-        const x = document.createElement('div');
-        x.textContent = key + ": " + (typeof value == 'string' ? value : JSON.stringify(value, null, ' '))
-        logData.append(x)
-      }
-  }
-  entry.append(time)
-  entry.append(logData)
-  log.prepend(entry)
+    let isRes = false;
+    if (data instanceof Promise) { // if it's a method we sent
+        data = await data
+        isRes = true;
+    }
+    console.log(name, data)
+    const log = document.getElementById('event-log')
+    const placeholder = log.querySelector('.event-placeholder')
+    if (placeholder) placeholder.remove()
+    const entry = document.createElement('div')
+    entry.className = 'event-entry'
+    const time = document.createElement('div');
+    time.textContent = name + ': [' + new Date().toLocaleTimeString() + ']'
+    if (isRes) {
+        time.textContent += data.success ? " Succeeded" : " Failed"
+        data = data.success ? data.data : data.error
+    } else {
+        delete data.room_id // dont need since this client only works 1 room at a time
+    }
+    const logData = document.createElement('div');
+    if (data == null) {data = ''}
+    if (typeof data == 'string') {
+        logData.textContent = data
+    } else {
+        for(const [key, value] of Object.entries(data)) {
+            const x = document.createElement('div');
+            x.textContent = key + ": " + (typeof value == 'string' ? value : JSON.stringify(value, null, ' '))
+            logData.append(x)
+        }
+    }
+    entry.append(time)
+    entry.append(logData)
+    log.prepend(entry)
 }
 
 
@@ -240,45 +240,45 @@ function showRoomCreation() {
 
 
 function showRoomActions(roomId, channelId, name, rm_password) {
-  currentRoomId = roomId
-  password = rm_password;
-  room_name = name;
-  document.getElementById('room-actions').classList.remove('hidden')
-  document.getElementById('room-badge').classList.add('visible')
-  document.getElementById('room-chat-badge').classList.add('visible')
-  document.getElementById('navbar-room-controls').classList.add('visible')
+    currentRoomId = roomId
+    password = rm_password;
+    room_name = name;
+    document.getElementById('room-actions').classList.remove('hidden')
+    document.getElementById('room-badge').classList.add('visible')
+    document.getElementById('room-chat-badge').classList.add('visible')
+    document.getElementById('navbar-room-controls').classList.add('visible')
 
-  document.getElementById('add-referee').classList.add('visible')
-  document.getElementById('room-badge').addEventListener('click', () => {
-    try {
-        navigator.clipboard.writeText("https://osu.ppy.sh/multiplayer/rooms/" + roomId)
-        showToast("Copied to clipboard!")
-    } catch {
-        showToast("Failed to copy. idk what happened")
-    }
-  })
-  document.getElementById('room-chat-id').textContent = channelId
-  document.getElementById('room-name').textContent = name
+    document.getElementById('add-referee').classList.add('visible')
+    document.getElementById('room-badge').addEventListener('click', () => {
+        try {
+            navigator.clipboard.writeText("https://osu.ppy.sh/multiplayer/rooms/" + roomId)
+            showToast("Copied to clipboard!")
+        } catch {
+            showToast("Failed to copy. idk what happened")
+        }
+    })
+    document.getElementById('room-chat-id').textContent = channelId
+    document.getElementById('room-name').textContent = name
 
 }
 
 function hideRoomActions() {
-  currentRoomId = null
-  document.getElementById('room-actions').classList.add('hidden')
-  document.getElementById('room-badge').classList.remove('visible')
-  document.getElementById('room-chat-badge').classList.remove('visible')
-  document.getElementById('navbar-room-controls').classList.remove('visible')
+    currentRoomId = null
+    document.getElementById('room-actions').classList.add('hidden')
+    document.getElementById('room-badge').classList.remove('visible')
+    document.getElementById('room-chat-badge').classList.remove('visible')
+    document.getElementById('navbar-room-controls').classList.remove('visible')
 
-  document.getElementById('add-referee').classList.remove('visible')
-  document.getElementById('room-chat-id').textContent = ''
-  document.getElementById('room-name').textContent = "APL Ref Client"
+    document.getElementById('add-referee').classList.remove('visible')
+    document.getElementById('room-chat-id').textContent = ''
+    document.getElementById('room-name').textContent = "APL Ref Client"
 }
 
 function showToast(message, duration = 3000) {
-     const toast = document.getElementById('toast')
-     toast.textContent = message
-     toast.classList.remove('hidden')
-     setTimeout(() => toast.classList.add('hidden'), duration)
+    const toast = document.getElementById('toast')
+    toast.textContent = message
+    toast.classList.remove('hidden')
+    setTimeout(() => toast.classList.add('hidden'), duration)
 }
 
 
@@ -366,34 +366,34 @@ async function addPlaylistItem(playlist_id, ruleset_id, beatmap_id, required_mod
 
     const edit_btn = clone.querySelector(".edit-playlist-btn")
     edit_btn.addEventListener('click', () => {
-      const playlistItem = clone.querySelector(".playlist-item")
+        const playlistItem = clone.querySelector(".playlist-item")
       
-      const modes = ["osu!", "taiko", "catch", "mania"]
+        const modes = ["osu!", "taiko", "catch", "mania"]
       
-      const textElements = edit_btn.parentNode.parentNode.parentNode.querySelectorAll(".playlist-item-text")
-      let beatmapId = ""
-      let requiredMods = ""
-      let allowedMods = ""
-      let freestyle = false
-      for (const el of textElements) {
-        const label = el.querySelector(".label").textContent
-        const value = el.querySelector(".value").textContent
-        if (label === "Beatmap ID") beatmapId = value
-        else if (label === "Required Mods") requiredMods = value
-        else if (label === "Allowed Mods") allowedMods = value
-        else if (label === "Freestyle") freestyle = value === "true"
-      }
+        const textElements = edit_btn.parentNode.parentNode.parentNode.querySelectorAll(".playlist-item-text")
+        let beatmapId = ""
+        let requiredMods = ""
+        let allowedMods = ""
+        let freestyle = false
+        for (const el of textElements) {
+            const label = el.querySelector(".label").textContent
+            const value = el.querySelector(".value").textContent
+            if (label === "Beatmap ID") beatmapId = value
+            else if (label === "Required Mods") requiredMods = value
+            else if (label === "Allowed Mods") allowedMods = value
+            else if (label === "Freestyle") freestyle = value === "true"
+        }
       
-      const rulesetText = edit_btn.parentNode.parentNode.parentNode.querySelector(".playlist-item-ruleset").textContent
-      const rulesetId = modes.indexOf(rulesetText)
+        const rulesetText = edit_btn.parentNode.parentNode.parentNode.querySelector(".playlist-item-ruleset").textContent
+        const rulesetId = modes.indexOf(rulesetText)
       
-      document.getElementById("popup-edit-beatmap-id").value = beatmapId
-      document.getElementById("popup-edit-ruleset-id").value = rulesetId >= 0 ? rulesetId : ""
-      document.getElementById("popup-edit-required-mods").value = requiredMods
-      document.getElementById("popup-edit-allowed-mods").value = allowedMods
-      document.getElementById("popup-edit-freestyle").checked = freestyle
-      editing_playlist_item = playlist_id
-      editPlaylistModal.classList.add('visible')
+        document.getElementById("popup-edit-beatmap-id").value = beatmapId
+        document.getElementById("popup-edit-ruleset-id").value = rulesetId >= 0 ? rulesetId : ""
+        document.getElementById("popup-edit-required-mods").value = requiredMods
+        document.getElementById("popup-edit-allowed-mods").value = allowedMods
+        document.getElementById("popup-edit-freestyle").checked = freestyle
+        editing_playlist_item = playlist_id
+        editPlaylistModal.classList.add('visible')
     })
 
     document.getElementById("playlist-items").appendChild(clone)
@@ -573,108 +573,108 @@ function str(id) { return document.getElementById(id).value.trim() }
 
 // ── Confirmation modal ────────────────────────────────────────────────────
 function confirm(title, body) {
-  return new Promise((resolve) => {
-    document.getElementById('confirm-title').textContent = title
-    document.getElementById('confirm-body').textContent = body
-    const modal = document.getElementById('confirm-modal')
-    modal.classList.add('visible')
+    return new Promise((resolve) => {
+        document.getElementById('confirm-title').textContent = title
+        document.getElementById('confirm-body').textContent = body
+        const modal = document.getElementById('confirm-modal')
+        modal.classList.add('visible')
 
-    const okBtn = document.getElementById('confirm-ok')
-    const cancelBtn = document.getElementById('confirm-cancel')
+        const okBtn = document.getElementById('confirm-ok')
+        const cancelBtn = document.getElementById('confirm-cancel')
 
-    function settle(value) {
-      modal.classList.remove('visible')
-      resolve(value)
-    }
+        function settle(value) {
+            modal.classList.remove('visible')
+            resolve(value)
+        }
 
-    okBtn.onclick = () => settle(true)
-    cancelBtn.onclick = () => settle(false)
-  })
+        okBtn.onclick = () => settle(true)
+        cancelBtn.onclick = () => settle(false)
+    })
 }
 
 // ── Add Playlist Modal ───────────────────────────────────────────────────
 const addPlaylistModal = document.getElementById('add-playlist-modal')
 document.getElementById('add-playlist-btn').addEventListener('click', () => {
-  addPlaylistModal.classList.add('visible')
+    addPlaylistModal.classList.add('visible')
 })
 document.getElementById('add-playlist-cancel').addEventListener('click', () => {
-  addPlaylistModal.classList.remove('visible')
+    addPlaylistModal.classList.remove('visible')
 })
 document.getElementById('add-playlist-confirm').addEventListener('click', async () => {
-  const beatmap_id = parseInt(document.getElementById('popup-beatmap-id').value, 10) || 0
-  const ruleset_id = parseInt(document.getElementById('popup-ruleset-id').value, 10) || 0
-  const required_mod_lst = (document.getElementById('popup-required-mods').value || '').split(' ').filter(m => m)
-  const allowed_mod_lst = (document.getElementById('popup-allowed-mods').value || '').split(' ').filter(m => m)
-  const freestyle = document.getElementById('popup-freestyle').checked
-  const required_mods = []
-  for (const mod of required_mod_lst) {
-    required_mods.push({acronym: mod})
-  }
-  const allowed_mods = []
-  for (const mod of allowed_mod_lst) {
-    allowed_mods.push({acronym: mod})
-  }
+    const beatmap_id = parseInt(document.getElementById('popup-beatmap-id').value, 10) || 0
+    const ruleset_id = parseInt(document.getElementById('popup-ruleset-id').value, 10) || 0
+    const required_mod_lst = (document.getElementById('popup-required-mods').value || '').split(' ').filter(m => m)
+    const allowed_mod_lst = (document.getElementById('popup-allowed-mods').value || '').split(' ').filter(m => m)
+    const freestyle = document.getElementById('popup-freestyle').checked
+    const required_mods = []
+    for (const mod of required_mod_lst) {
+        required_mods.push({acronym: mod})
+    }
+    const allowed_mods = []
+    for (const mod of allowed_mod_lst) {
+        allowed_mods.push({acronym: mod})
+    }
 
-  const result = await osu.AddPlaylistItem(currentRoomId, {
-    beatmap_id,
-    ruleset_id,
-    required_mods,
-    allowed_mods,
-    freestyle
-  })
+    const result = await osu.AddPlaylistItem(currentRoomId, {
+        beatmap_id,
+        ruleset_id,
+        required_mods,
+        allowed_mods,
+        freestyle
+    })
   
-  addPlaylistModal.classList.remove('visible')
-  document.getElementById('popup-beatmap-id').value = ''
-  document.getElementById('popup-ruleset-id').value = ''
-  document.getElementById('popup-required-mods').value = ''
-  document.getElementById('popup-allowed-mods').value = ''
-  document.getElementById('popup-freestyle').checked = false
+    addPlaylistModal.classList.remove('visible')
+    document.getElementById('popup-beatmap-id').value = ''
+    document.getElementById('popup-ruleset-id').value = ''
+    document.getElementById('popup-required-mods').value = ''
+    document.getElementById('popup-allowed-mods').value = ''
+    document.getElementById('popup-freestyle').checked = false
 })
 
 // edit playlist
 const editPlaylistModal = document.getElementById('edit-playlist-modal');
 document.getElementById('edit-playlist-cancel').addEventListener('click', () => {
-  editPlaylistModal.classList.remove('visible')
+    editPlaylistModal.classList.remove('visible')
 })
 
 document.getElementById('edit-playlist-remove').addEventListener('click', async () => {
-  await osu.RemovePlaylistItem(currentRoomId, {
-    playlist_item_id: editing_playlist_item
-  })
-  editPlaylistModal.classList.remove('visible')
+    await osu.RemovePlaylistItem(currentRoomId, {
+        playlist_item_id: editing_playlist_item
+    })
+    editPlaylistModal.classList.remove('visible')
 })
 
 
 document.getElementById('edit-playlist-confirm').addEventListener('click', async () => {
-  const beatmap_id = parseInt(document.getElementById('popup-edit-beatmap-id').value, 10) || 0
-  const ruleset_id = parseInt(document.getElementById('popup-edit-ruleset-id').value, 10) || 0
-  const required_mod_lst = (document.getElementById('popup-edit-required-mods').value || '').split(' ').filter(m => m)
-  const allowed_mod_lst = (document.getElementById('popup-edit-allowed-mods').value || '').split(' ').filter(m => m)
-  const freestyle = document.getElementById('popup-edit-freestyle').checked
-  const required_mods = []
-  for (const mod of required_mod_lst) {
-    required_mods.push({acronym: mod})
-  }
-  const allowed_mods = []
-  for (const mod of allowed_mod_lst) {
-    allowed_mods.push({acronym: mod})
-  }
+    const beatmap_id = parseInt(document.getElementById('popup-edit-beatmap-id').value, 10) || 0
+    const ruleset_id = parseInt(document.getElementById('popup-edit-ruleset-id').value, 10) || 0
+    const required_mod_lst = (document.getElementById('popup-edit-required-mods').value || '').split(' ').filter(m => m)
+    const allowed_mod_lst = (document.getElementById('popup-edit-allowed-mods').value || '').split(' ').filter(m => m)
+    const freestyle = document.getElementById('popup-edit-freestyle').checked
+    const required_mods = []
+    for (const mod of required_mod_lst) {
+        required_mods.push({acronym: mod})
+    }
+    const allowed_mods = []
+    for (const mod of allowed_mod_lst) {
+        allowed_mods.push({acronym: mod})
+    }
 
-  const result = await osu.EditPlaylistItem(currentRoomId, {
-    playlist_item_id: editing_playlist_item,
-    beatmap_id,
-    ruleset_id,
-    required_mods,
-    allowed_mods,
-    freestyle
-  })
+    const result = await osu.EditPlaylistItem(currentRoomId, {
+        playlist_item_id: editing_playlist_item,
+        beatmap_id,
+        ruleset_id,
+        required_mods,
+        allowed_mods,
+        freestyle
+    })
   
-  editPlaylistModal.classList.remove('visible')
-  document.getElementById('popup-beatmap-id').value = ''
-  document.getElementById('popup-ruleset-id').value = ''
-  document.getElementById('popup-required-mods').value = ''
-  document.getElementById('popup-allowed-mods').value = ''
-  document.getElementById('popup-freestyle').checked = false
+    editPlaylistModal.classList.remove('visible')
+    document.getElementById('popup-beatmap-id').value = ''
+    document.getElementById('popup-ruleset-id').value = ''
+    document.getElementById('popup-required-mods').value = ''
+    document.getElementById('popup-allowed-mods').value = ''
+    document.getElementById('popup-freestyle').checked = false
   
 })
 
@@ -682,10 +682,10 @@ document.getElementById('edit-playlist-confirm').addEventListener('click', async
 const invitePlayerModal = document.getElementById('invite-player-modal')
 
 document.getElementById('invite-player-btn').addEventListener('click', () => {
-  invitePlayerModal.classList.add('visible')
+    invitePlayerModal.classList.add('visible')
 })
 document.getElementById('invite-player-cancel').addEventListener('click', () => {
-  invitePlayerModal.classList.remove('visible')
+    invitePlayerModal.classList.remove('visible')
 })
 
 document.getElementById('invite-player-confirm').addEventListener('click', async () => {
@@ -710,24 +710,24 @@ document.getElementById('invite-player-confirm').addEventListener('click', async
 })
 
 document.getElementById('popup-invite-username').addEventListener('keydown', (event) => { // clicks when press enter
-  if (event.key === 'Enter') {
-    document.getElementById('invite-player-confirm').click()
-  }
+    if (event.key === 'Enter') {
+        document.getElementById('invite-player-confirm').click()
+    }
 })
 document.getElementById('popup-invite-userid').addEventListener('keydown', (event) => { // clicks when press enter
-  if (event.key === 'Enter') {
-    document.getElementById('invite-player-confirm').click()
-  }
+    if (event.key === 'Enter') {
+        document.getElementById('invite-player-confirm').click()
+    }
 })
 
 
 const inviteRefModal = document.getElementById('invite-ref-modal')
 
 document.getElementById('add-referee').addEventListener('click', () => {
-  inviteRefModal.classList.add('visible')
+    inviteRefModal.classList.add('visible')
 })
 document.getElementById('invite-ref-cancel').addEventListener('click', () => {
-  inviteRefModal.classList.remove('visible')
+    inviteRefModal.classList.remove('visible')
 })
 
 document.getElementById('invite-ref-confirm').addEventListener('click', async () => {
@@ -750,116 +750,116 @@ const statusDot = document.getElementById('status-dot')
 const statusText = document.getElementById('status-text')
 
 async function updateStatus() {
-  const status = await window.api.GetConnectionStatus()
-  const connected = status.data ? status.data.connected : false
-  statusDot.classList.toggle('connected', connected)
-  statusText.textContent = connected ? 'Connected' : 'Disconnected'
+    const status = await window.api.GetConnectionStatus()
+    const connected = status.data ? status.data.connected : false
+    statusDot.classList.toggle('connected', connected)
+    statusText.textContent = connected ? 'Connected' : 'Disconnected'
 }
 updateStatus()
 setInterval(updateStatus, 5000)
 
 // ── Room Setup ─────────────────────────────────────────────────────────────
 document.getElementById('make-room-btn').addEventListener('click', async () => { // TODO centralize logic for here and joining room
-  const result = await osu.MakeRoom({
-    ruleset_id: int('make-ruleset-id'),
-    beatmap_id: int('make-beatmap-id'),
-    name: str('make-room-name')
-  })
-  if (result.success && result.data) {
-    showRoomActions(result.data.room_id, result.data.chat_channel_id, result.data.name, result.data.password)
-    hideRoomCreation()
-    connected = true
-    chat_channel_id = result.data.chat_channel_id;
-    const playlist = result.data.playlist[0]
-    addPlaylistItem(playlist.id, playlist.ruleset_id, playlist.beatmap_id, playlist.required_mods, playlist.allowed_mods, playlist.freestyle, playlist.was_played)
-    playlistItems[playlist.id] = playlist
+    const result = await osu.MakeRoom({
+        ruleset_id: int('make-ruleset-id'),
+        beatmap_id: int('make-beatmap-id'),
+        name: str('make-room-name')
+    })
+    if (result.success && result.data) {
+        showRoomActions(result.data.room_id, result.data.chat_channel_id, result.data.name, result.data.password)
+        hideRoomCreation()
+        connected = true
+        chat_channel_id = result.data.chat_channel_id;
+        const playlist = result.data.playlist[0]
+        addPlaylistItem(playlist.id, playlist.ruleset_id, playlist.beatmap_id, playlist.required_mods, playlist.allowed_mods, playlist.freestyle, playlist.was_played)
+        playlistItems[playlist.id] = playlist
 
-    document.getElementById('cur-match-type').textContent = result.data.type
-  }
+        document.getElementById('cur-match-type').textContent = result.data.type
+    }
 })
 
 document.getElementById('join-room-btn').addEventListener('click', async () => {
-  const roomId = int('join-room-id')
-  const result = await osu.JoinRoom(roomId)
-  if (result.success) {
-    showRoomActions(roomId, result.data.chat_channel_id, result.data.name, result.data.password)
-    hideRoomCreation()
-    connected = true
-    chat_channel_id = result.data.chat_channel_id;
-    const playlist = result.data.playlist[0]
-    addPlaylistItem(playlist.id, playlist.ruleset_id, playlist.beatmap_id, playlist.required_mods, playlist.allowed_mods, playlist.freestyle, playlist.was_played)
-    playlistItems[playlist.id] = playlist
+    const roomId = int('join-room-id')
+    const result = await osu.JoinRoom(roomId)
+    if (result.success) {
+        showRoomActions(roomId, result.data.chat_channel_id, result.data.name, result.data.password)
+        hideRoomCreation()
+        connected = true
+        chat_channel_id = result.data.chat_channel_id;
+        const playlist = result.data.playlist[0]
+        addPlaylistItem(playlist.id, playlist.ruleset_id, playlist.beatmap_id, playlist.required_mods, playlist.allowed_mods, playlist.freestyle, playlist.was_played)
+        playlistItems[playlist.id] = playlist
 
-    document.getElementById('cur-match-type').textContent = result.data.type
-  }
+        document.getElementById('cur-match-type').textContent = result.data.type
+    }
 })
 
 // ── Room Settings (navbar dropdown) ───────────────────────────────────────
 document.getElementById('change-settings-btn').addEventListener('click', async () => {
-  const settings = {}
-  const name = str('settings-name')
-  const password = str('settings-password')
-  settings.type = document.getElementsByName("match_type")[0].checked ? "head_to_head" : "team_versus";
-  if (name) settings.name = name
-  if (password) settings.password = password
-  const result = await osu.ChangeRoomSettings(currentRoomId, settings)
-  hideSettingsDropdown()
+    const settings = {}
+    const name = str('settings-name')
+    const password = str('settings-password')
+    settings.type = document.getElementsByName("match_type")[0].checked ? "head_to_head" : "team_versus";
+    if (name) settings.name = name
+    if (password) settings.password = password
+    const result = await osu.ChangeRoomSettings(currentRoomId, settings)
+    hideSettingsDropdown()
 })
 
 // ── Match Control ──────────────────────────────────────────────────────────
 document.getElementById('start-match-btn').addEventListener('click', async () => {
-  const result = await osu.StartMatch(currentRoomId, {
-      'countdown': int('start-match-seconds')
-  })
+    const result = await osu.StartMatch(currentRoomId, {
+        'countdown': int('start-match-seconds')
+    })
 })
 
 document.getElementById('stop-countdown-btn').addEventListener('click', async () => {
-  const result = await osu.StopMatchCountdown(currentRoomId)
+    const result = await osu.StopMatchCountdown(currentRoomId)
 })
 
 document.getElementById('abort-match-btn').addEventListener('click', async () => {
-  const result = await osu.AbortMatch(currentRoomId)
+    const result = await osu.AbortMatch(currentRoomId)
 })
 
 // ── Leave / Close Room (with confirmation) ─────────────────────────────────
 document.getElementById('leave-room-btn').addEventListener('click', async () => {
-  const ok = await confirm(
-    'Leave Room',
-    'Are you sure you want to leave room ' + currentRoomId + '? Your referee privileges will be removed.'
-  )
-  if (!ok) return
-  const result = await osu.LeaveRoom(currentRoomId)
-  if (result.success) {
-    hideRoomActions()
-    showRoomCreation()
-    connected = false;
-    players = {}
-    playlistItems = {} // TODO for both of these, make it trigger a deletion or something of the playlistitems on the UI
-    chat_channel_id = ""
+    const ok = await confirm(
+        'Leave Room',
+        'Are you sure you want to leave room ' + currentRoomId + '? Your referee privileges will be removed.'
+    )
+    if (!ok) return
+    const result = await osu.LeaveRoom(currentRoomId)
+    if (result.success) {
+        hideRoomActions()
+        showRoomCreation()
+        connected = false;
+        players = {}
+        playlistItems = {} // TODO for both of these, make it trigger a deletion or something of the playlistitems on the UI
+        chat_channel_id = ""
 
-    document.getElementById("chat-messages").innerHTML = '<div id="no-messages" class="text-gray-500 dark:text-gray-400 text-sm italic">No messages yet...</div>'
-  } else {
-  }
+        document.getElementById("chat-messages").innerHTML = '<div id="no-messages" class="text-gray-500 dark:text-gray-400 text-sm italic">No messages yet...</div>'
+    } else {
+    }
 })
 
 document.getElementById('close-room-btn').addEventListener('click', async () => {
-  const ok = await confirm(
-    'Close Room',
-    'Are you sure you want to permanently close room ' + currentRoomId + '? This cannot be undone.'
-  )
-  if (!ok) return
-  const result = await osu.CloseRoom(currentRoomId)
-  if (result.success) {
-    hideRoomActions()
-    showRoomCreation()
-    connected = false
-    players = {}
-    playlistItems = {}
-    chat_channel_id = ""
+    const ok = await confirm(
+        'Close Room',
+        'Are you sure you want to permanently close room ' + currentRoomId + '? This cannot be undone.'
+    )
+    if (!ok) return
+    const result = await osu.CloseRoom(currentRoomId)
+    if (result.success) {
+        hideRoomActions()
+        showRoomCreation()
+        connected = false
+        players = {}
+        playlistItems = {}
+        chat_channel_id = ""
 
-    document.getElementById("chat-messages").innerHTML = '<div id="no-messages" class="text-gray-500 dark:text-gray-400 text-sm italic">No messages yet...</div>'
-  } else {
-  }
+        document.getElementById("chat-messages").innerHTML = '<div id="no-messages" class="text-gray-500 dark:text-gray-400 text-sm italic">No messages yet...</div>'
+    } else {
+    }
 })
 
 // Messaging
@@ -875,15 +875,15 @@ document.getElementById('chat-send-btn').addEventListener('click', async () => {
 })
 
 document.getElementById('chat-input').addEventListener('keydown', (event) => { // clicks when press enter
-  if (event.key === 'Enter') {
-    document.getElementById('chat-send-btn').click()
-  }
+    if (event.key === 'Enter') {
+        document.getElementById('chat-send-btn').click()
+    }
 })
 
 // ── Debug ──────────────────────────────────────────────────────────────────
 document.getElementById('ping-btn').addEventListener('click', async () => {
-  const result = await osu.Ping('PING TEST WORKING YAY')
-  setResult('ping-result', result)
+    const result = await osu.Ping('PING TEST WORKING YAY')
+    setResult('ping-result', result)
 })
 
 // chat parsing
@@ -944,7 +944,7 @@ window.api.on.PlaylistItemChanged(info => {
             playlistItems[playlist_id][key] = data[key]
         })
     }
-        refreshPlaylistItems()
+    refreshPlaylistItems()
 })
 window.api.on.PlaylistItemRemoved(info => {
     delete playlistItems[info.playlist_item_id]

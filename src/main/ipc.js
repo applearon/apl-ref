@@ -3,49 +3,49 @@ const { WebSocket } = require('ws')
 const { CMDS_SET } = require('../referee/commands')
 const { EVENTS } = require('../referee/events')
 function createHandler(getRefereeClient, handlerFn) {
-  return async (event, ...args) => {
-    const refereeClient = getRefereeClient()
-    if (!refereeClient) {
-      return { success: false, error: 'Client not initialized' }
+    return async (event, ...args) => {
+        const refereeClient = getRefereeClient()
+        if (!refereeClient) {
+            return { success: false, error: 'Client not initialized' }
+        }
+        try {
+            const result = await handlerFn(refereeClient, ...args)
+            return { success: true, data: result }
+        } catch (err) {
+            return { success: false, error: err.message }
+        }
     }
-    try {
-      const result = await handlerFn(refereeClient, ...args)
-      return { success: true, data: result }
-    } catch (err) {
-      return { success: false, error: err.message }
-    }
-  }
 }
 
 function genericHandler(getRefereeClient, cmd) {
     return async (event, ...args) => {
         const refereeClient = getRefereeClient();
         if (!refereeClient) {
-        return { success: false, error: 'Client not initialized' }
+            return { success: false, error: 'Client not initialized' }
         }
         try {
             const result = await refereeClient[cmd](...args)
             return { success: true, data: result }
         } catch (err) {
-          console.log(err, "oh")
-          console.log(cmd);
+            console.log(err, "oh")
+            console.log(cmd);
             console.log(...args)
-          //console.log(refereeClient)
-          return { success: false, error: err.message }
+            //console.log(refereeClient)
+            return { success: false, error: err.message }
         }
 
     }
 }
 
 function createQueryHandler(getRefereeClient, queryFn) {
-  return async (event, ...args) => {
-    const refereeClient = getRefereeClient()
-    try {
-      return { success: true, data: await queryFn(refereeClient, ...args) }
-    } catch (err) {
-      return { success: false, error: err.message }
+    return async (event, ...args) => {
+        const refereeClient = getRefereeClient()
+        try {
+            return { success: true, data: await queryFn(refereeClient, ...args) }
+        } catch (err) {
+            return { success: false, error: err.message }
+        }
     }
-  }
 }
 
 function setupIpcHandlers(getRefereeClient) {
@@ -55,24 +55,24 @@ function setupIpcHandlers(getRefereeClient) {
     CMDS_SET.forEach(cmd => {
         ipcMain.handle(cmd, genericHandler(getRefereeClient, cmd));
     })
-  ipcMain.handle('GetUser', createQueryHandler(getRefereeClient, (client, user_id) => {
-    const accessToken = client.accessToken;
-    const url = new URL(`https://osu.ppy.sh/api/v2/users/${user_id}/osu`);
-    //url.searchParams.append("key", "at")
-    // ^ technically we want either or so...
-    const headers = {
-    "Content-Type": "application/json",
-    "Accept": "application/json",
-    Authorization: `Bearer ${accessToken}`,
-    }
+    ipcMain.handle('GetUser', createQueryHandler(getRefereeClient, (client, user_id) => {
+        const accessToken = client.accessToken;
+        const url = new URL(`https://osu.ppy.sh/api/v2/users/${user_id}/osu`);
+        //url.searchParams.append("key", "at")
+        // ^ technically we want either or so...
+        const headers = {
+            "Content-Type": "application/json",
+            "Accept": "application/json",
+            Authorization: `Bearer ${accessToken}`,
+        }
 
-    const x = fetch(url, {
-        method: "GET",
-        headers,
-    }).then(response => response.json())
-    //console.log(x)
-    return x;
-  }))
+        const x = fetch(url, {
+            method: "GET",
+            headers,
+        }).then(response => response.json())
+        //console.log(x)
+        return x;
+    }))
     ipcMain.handle('SendMessage', createQueryHandler(getRefereeClient, (client, channel_id, message) => {
         const accessToken = client.accessToken;
         const url = new URL(`https://osu.ppy.sh/api/v2/chat/channels/${channel_id}/messages`);
@@ -122,8 +122,8 @@ function setupIpcHandlers(getRefereeClient) {
     }))
 
     ipcMain.handle('GetConnectionStatus', createQueryHandler(getRefereeClient, (client) => {
-    return { connected: client?.connected || false }
-  }))
+        return { connected: client?.connected || false }
+    }))
 
 }
 

@@ -15,21 +15,21 @@ ipcRenderer.invoke('get-api-data').then(API_DATA => {
         }
     }
     contextBridge.exposeInMainWorld('api', {
-      send: api,
+        send: api,
     
-      GetConnectionStatus: () => ipcRenderer.invoke('GetConnectionStatus'),
-      api: { // calls to the osu api the normal way
-          onChatMessage :(callback) => {
-          ipcRenderer.on('chat-event', (event, buffer) => callback(buffer))
+        GetConnectionStatus: () => ipcRenderer.invoke('GetConnectionStatus'),
+        api: { // calls to the osu api the normal way
+            onChatMessage :(callback) => {
+                ipcRenderer.on('chat-event', (event, buffer) => callback(buffer))
+            },
+            GetUser: (user_id) => ipcRenderer.invoke('GetUser', user_id),
+            SendMessage: (channel_id, message) => ipcRenderer.invoke('SendMessage', channel_id, message),
+            GetBeatmap: (beatmap_id) => ipcRenderer.invoke('GetBeatmap', beatmap_id),
+            GetScores: (room_id, playlist_id) => ipcRenderer.invoke('GetScores', room_id, playlist_id),
         },
-        GetUser: (user_id) => ipcRenderer.invoke('GetUser', user_id),
-        SendMessage: (channel_id, message) => ipcRenderer.invoke('SendMessage', channel_id, message),
-        GetBeatmap: (beatmap_id) => ipcRenderer.invoke('GetBeatmap', beatmap_id),
-        GetScores: (room_id, playlist_id) => ipcRenderer.invoke('GetScores', room_id, playlist_id),
-      },
-      config: {
-          SendConfig: (client_id, client_secret) => ipcRenderer.invoke('SendConfig', client_id, client_secret),
-      },
-      on: on,
+        config: {
+            SendConfig: (client_id, client_secret) => ipcRenderer.invoke('SendConfig', client_id, client_secret),
+        },
+        on: on,
     })
 })
