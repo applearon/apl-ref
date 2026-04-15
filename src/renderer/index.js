@@ -37,6 +37,8 @@ let editing_playlist_item = 0;
 let password = ""
 let room_name = ""
 
+let countdown_id;
+
 async function ircStyleUsername(str) { // old mode is #14573534 for user id, and username otherwise
     if (str[0] == '#') {
         return parseInt(str.substring(1))
@@ -47,37 +49,56 @@ async function ircStyleUsername(str) { // old mode is #14573534 for user id, and
 // TODO most of these don't update the UI
 async function cmdRunner(cmd, ...args) {
     const map = { 
-        "name": () => {return {"ChangeRoomSettings": {name: args[0]}}},
-        "invite": async () => {return {"InvitePlayer": await ircStyleUsername(args[0])}},
-        "lock": () => {return {"SetLockState": {"locked": true}}},
-        "unlock": () => {return {"SetLockState": {"locked": false}}},
-        "set": () => {return {"ChangeRoomSettings": {type: args[0] == 0 ? "head_to_head" : "team_versus"}}},
-        "start": () => {return {"StartMatch": {countdown: args[0]}}},
-        "abort": () => {return {"AbortMatch": {}}},
-        "team": async () => {return {"MoveCustom": {user_id: await ircStyleUsername(args[0]), team: args[0]}, custom: true}},
-        "map": () => {return {"EditCurrentPlaylistItem": {beatmap_id: parseInt(args[0]), ruleset_id: parseInt(args[1]) ?? 0 }}},
-        "mods": () => {return {"EditCurrentPlaylistItem": handleModChange(args)}},
-        "timer": ()=> {}, // need custom logic
-        "kick": async () => {return {"KickPlayer": await ircStyleUsername(args[0])}},
-        "ban": async () => {return {"BanUser": await ircStyleUsername(args[0])}},
-        "password": () => {return {"ChangeRoomSettings": {password: args[0]}}},
-        "addref": async () => {return {"AddReferee": await ircStyleUsername(args[0])}},
-        "removeref": async () => {return {"RemoveReferee": await ircStyleUsername(args[0])}},
+        "name": () => {return osu.ChangeRoomSettings(currentRoomId, {name: args.join(' ')})},
+        "invite": async () => {return osu.InvitePlayer(currentRoomId, await ircStyleUsername(args[0]))},
+        "lock": () => {return osu.SetLockState(currentRoomId, {locked: true})},
+        "unlock": () => {return osu.SetLockState(currentRoomId, {"locked": false})},
+        "set": () => {return osu.ChangeRoomSettings(currentRoomId, {type: args[0] == 0 ? "head_to_head" : "team_versus"})},
+        "start": () => {return osu.StartMatch(currentRoomId, {countdown: parseInt(args[0])})},
+        "abort": () => {return osu.AbortMatch(currentRoomId)},
+        "team": async () => {return osu.MoveCustom(currentRoomId, {user_id: await ircStyleUsername(args[0]), team: args[0]})},
+        "map": () => {return osu.EditCurrentPlaylistItem(currentRoomId, {beatmap_id: parseInt(args[0]), ruleset_id: parseInt(args[1]) ?? 0 })},
+        "mods": () => {return osu.EditCurrentPlaylistItem(currentRoomId, handleModChange(args))},
+        "timer": () => {
+            clearInterval(countdown_id);
+            countdown_id = startTimer(parseInt(args[0]));
+        },
+        "aborttimer": () => { // TODO for this and the button, dont make it erroneously osu.StopMatchCountdown
+            osu.StopMatchCountdown(currentRoomId)
+            if (countdown_id != null) {
+                clearInterval(countdown_id)
+                addSystemMsg("Countdown aborted")
+                countdown_id = null
+            }
+        },
+        "kick": async () => {return osu.KickPlayer(currentRoomId, await ircStyleUsername(args[0]))},
+        "ban": async () => {return osu.BanUser(currentRoomId, await ircStyleUsername(args[0]))},
+        "password": () => {return osu.ChangeRoomSettings(currentRoomId, {password: args[0]})},
+        "addref": async () => {return osu.AddReferee(currentRoomId, await ircStyleUsername(args[0]))},
+        "removeref": async () => {return osu.RemoveReferee(currentRoomId, await ircStyleUsername(args[0]))},
         "listrefs": () => {}, // need custom logic
-        "close": () => {return {"CloseRoom": null}}, // needs to update UI
-        "help": () => {}, // expected 0 args and also needs custom logic
+        "close": () => {return osu.CloseRoom(currentRoomId)}, // needs to update UI
+        "help": () => {
+            return addSystemMsg(Object.keys(map).join(', '))
+        }, // expected 0 args and also needs custom logic
     }
-    for (const x of Object.entries(await map[cmd]())) {
-        osu[x[0]](currentRoomId, x[1])
+    if (!map[cmd]) {
+        addSystemMsg(`Invalid command: ${cmd}`)
+        return false;
     }
+    await map[cmd]()
+    //for (const x of Object.entries(await map[cmd])) {
+    //    osu[x[0]](currentRoomId, x[1])
+    //}
 }
 
 function handleModChange(args) {
     // this is so stupid
     const fm = args.map((x) => x.toLowerCase()).includes('freemod')
+    const mods = [ 'hd', 'hr', 'ez', 'fl', 'rx', 'so', 'nf', 'ap' ].map(m => ({acronym: m}))
     return {
         required_mods: fm ? null : args.map((x) => {return {acronym: x}}),
-        allowed_mods: fm ? [ 'hd', 'hr', 'ez', 'fl', 'rx', 'so', 'nf', 'ap' ] : null // assuming only want normal mods..
+        allowed_mods: fm ? mods : [] // assuming only want normal mods..
     }
 }
 
@@ -242,7 +263,6 @@ function idFromUsername(username) {
     if (user != undefined) {
         return user;
     } else {
-        console.log("failed to grab player idk what you just did")
         return null;
     }
 }
@@ -509,6 +529,30 @@ function addVerboseMods(user_id, mods) { // might work, **definitely** needs tes
     if (cur == null) verboseMods.appendChild(clone)
 }
 
+
+// Timer
+function startTimer(seconds) {
+    const informTimes = [30, 15, 10, 5]
+    window.api.api.SendMessage(chat_channel_id, `Started a countdown for ${seconds} seconds`)
+    let elapsed = 0
+    countdown_id = setInterval(() => {
+        console.log(elapsed, seconds)
+        if (elapsed >= seconds) {
+            clearInterval(countdown_id)
+            window.api.api.SendMessage(chat_channel_id, "The countdown has ended.")
+            countdown_id = null
+            return;
+        }
+        if (informTimes.includes(seconds-elapsed) || (seconds - elapsed) % 60 == 0) {
+            let msg = "The countdown has "
+            msg += (seconds-elapsed) >= 60 ? `${Math.floor(seconds / 60)} minutes ` : ""
+            msg += `${(seconds-elapsed) % 60} seconds remaining.`
+            window.api.api.SendMessage(chat_channel_id, msg)
+        }
+        elapsed += 1;
+    }, 1000)
+    return countdown_id;
+}
 
 // Scores
 function addSoloScore(username, score) {
@@ -838,8 +882,18 @@ document.getElementById('start-match-btn').addEventListener('click', async () =>
     })
 })
 
+document.getElementById('timer-btn').addEventListener('click', async () => {
+    clearInterval(countdown_id);
+    countdown_id = startTimer(int('start-match-seconds'));
+})
+
 document.getElementById('stop-countdown-btn').addEventListener('click', async () => {
     const result = await osu.StopMatchCountdown(currentRoomId)
+    if (countdown_id != null) {
+        clearInterval(countdown_id)
+        addSystemMsg("Countdown aborted")
+        countdown_id = null
+    }
 })
 
 document.getElementById('abort-match-btn').addEventListener('click', async () => {
@@ -923,6 +977,7 @@ function commandHandler(username, message) {
             cmdRunner(args.shift(), ...args)
         }
     }
+    commands["!roll"] = commands["/roll"] // same as bancho
     let cmd = message.trim().split(' ')
     if (commands[cmd[0]] != undefined) {
         commands[cmd.shift()](cmd);

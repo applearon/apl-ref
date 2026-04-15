@@ -57,10 +57,13 @@
           <label class="text-sm text-gray-600 dark:text-gray-400 block mb-1">Countdown seconds (0 = immediate)</label>
           <input id="start-match-seconds" type="number" value="0" class="w-full border border-gray-300 dark:border-gray-600 rounded px-2 py-1 bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-100 text-sm" />
         </div>
-        <div class="flex flex-wrap gap-2 mb-2">
-          <button id="start-match-btn" class="bg-green-600 hover:bg-green-700 text-white px-3 py-1 rounded text-sm">Start</button>
-          <button id="stop-countdown-btn" class="bg-orange-500 hover:bg-orange-600 text-white px-3 py-1 rounded text-sm">Stop</button>
+        <div class="grid grid-cols-2 gap-2 mb-2">
+          <button id="start-match-btn" class="bg-green-600 hover:bg-green-700 text-white px-3 py-1 rounded text-sm">Start Match</button>
+          <button id="timer-btn" class="bg-yellow-600 hover:bg-yellow-700 text-white px-3 py-1 rounded text-sm">Timer</button>
+
+          <button id="stop-countdown-btn" class="bg-orange-500 hover:bg-orange-600 text-white px-3 py-1 rounded text-sm">Stop Timer</button>
           <button id="abort-match-btn" class="bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded text-sm">Abort Match</button>
+
         </div>
         <div class="text-xs text-gray-500 flex flex-col">
           <span id="start-match-result" class="result-msg"></span>
