@@ -76,7 +76,7 @@ async function cmdRunner(cmd, ...args) {
         "password": () => {return osu.ChangeRoomSettings(currentRoomId, {password: args[0]})},
         "addref": async () => {return osu.AddReferee(currentRoomId, await ircStyleUsername(args[0]))},
         "removeref": async () => {return osu.RemoveReferee(currentRoomId, await ircStyleUsername(args[0]))},
-        "listrefs": () => {}, // need custom logic
+        "listrefs": () => {return addSystemMsg("Unimplemented")}, // need custom logic
         "close": () => {return osu.CloseRoom(currentRoomId)}, // needs to update UI
         "help": () => {
             return addSystemMsg(Object.keys(map).join(', '))
