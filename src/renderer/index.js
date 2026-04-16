@@ -900,28 +900,6 @@ document.getElementById('abort-match-btn').addEventListener('click', async () =>
     const result = await osu.AbortMatch(currentRoomId)
 })
 
-// ── Leave / Close Room (with confirmation) ─────────────────────────────────
-document.getElementById('leave-room-btn').addEventListener('click', async () => {
-    const ok = await confirm(
-        'Leave Room',
-        'Are you sure you want to leave room ' + currentRoomId + '? Your referee privileges will be removed.'
-    )
-    if (!ok) return
-    const result = await osu.LeaveRoom(currentRoomId)
-    if (result.success) {
-        hideRoomActions()
-        showRoomCreation()
-        connected = false;
-        players = {}
-        playlistItems = {} // TODO for both of these, make it trigger a deletion or something of the playlistitems on the UI
-        chat_channel_id = ""
-
-        document.getElementById("chat-messages").innerHTML = '<div id="no-messages" class="text-gray-500 dark:text-gray-400 text-sm italic">No messages yet...</div>'
-    } else {
-        console.log("How the hell")
-    }
-})
-
 document.getElementById('close-room-btn').addEventListener('click', async () => {
     const ok = await confirm(
         'Close Room',
