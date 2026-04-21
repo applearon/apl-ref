@@ -23,6 +23,7 @@ ipcRenderer.invoke('get-api-data').then(API_DATA => {
                 ipcRenderer.on('chat-event', (event, buffer) => callback(buffer))
             },
             GetUser: (user_id) => ipcRenderer.invoke('GetUser', user_id),
+            GetSelf: () => ipcRenderer.invoke('GetSelf'),
             SendMessage: (channel_id, message) => ipcRenderer.invoke('SendMessage', channel_id, message),
             GetBeatmap: (beatmap_id) => ipcRenderer.invoke('GetBeatmap', beatmap_id),
             GetScores: (room_id, playlist_id) => ipcRenderer.invoke('GetScores', room_id, playlist_id),

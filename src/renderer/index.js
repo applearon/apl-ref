@@ -26,6 +26,8 @@ fetch('mods.json').then(mod_res => {
 })
 
 // Stored Data TODO: make this into a proper class
+let me;
+window.api.api.GetSelf().then (x => me = x.data)
 let players = {};
 let other_players = {}; // removes calling too much, should be partially(?) replaced with referee list
 let playlistItems = {};
@@ -858,9 +860,11 @@ document.getElementById('join-room-btn').addEventListener('click', async () => {
         hideRoomCreation()
         connected = true
         chat_channel_id = result.data.chat_channel_id;
-        const playlist = result.data.playlist[0]
-        addPlaylistItem(playlist.id, playlist.ruleset_id, playlist.beatmap_id, playlist.required_mods, playlist.allowed_mods, playlist.freestyle, playlist.was_played)
-        playlistItems[playlist.id] = playlist
+        const playlists = result.data.playlist
+        for (const playlist of playlists) {
+            addPlaylistItem(playlist.id, playlist.ruleset_id, playlist.beatmap_id, playlist.required_mods, playlist.allowed_mods, playlist.freestyle, playlist.was_played)
+            playlistItems[playlist.id] = playlist
+        }
 
         document.getElementById('cur-match-type').textContent = result.data.type
     }
@@ -911,11 +915,12 @@ document.getElementById('close-room-btn').addEventListener('click', async () => 
     if (!ok) return
     const result = await osu.CloseRoom(currentRoomId)
     if (result.success) {
-        hideRoomActions()
+        hideRoomActions() // copied around, TODO generalize
         showRoomCreation()
         connected = false
         players = {}
         playlistItems = {}
+        refreshPlaylistItems()
         chat_channel_id = ""
 
         document.getElementById("chat-messages").innerHTML = '<div id="no-messages" class="text-gray-500 dark:text-gray-400 text-sm italic">No messages yet...</div>'
@@ -984,6 +989,19 @@ window.api.on.UserLeft(info => {
     removePlayer(info.user_id)
 })
 window.api.on.UserKicked(info => {
+    console.log(me)
+    console.log(me.id)
+    if (info.kicked_user_id == me.id) {
+        hideRoomActions()
+        showRoomCreation()
+        connected = false
+        players = {}
+        playlistItems = {}
+        refreshPlaylistItems()
+        chat_channel_id = ""
+
+        document.getElementById("chat-messages").innerHTML = '<div id="no-messages" class="text-gray-500 dark:text-gray-400 text-sm italic">No messages yet...</div>'
+    }
     removePlayer(info.kicked_user_id)
 })
 window.api.on.RoomSettingsChanged(info => {
@@ -1086,5 +1104,4 @@ window.api.api.onChatMessage(async buffer => {
         }
     }
 })
-
 

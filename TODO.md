@@ -20,11 +20,11 @@ New Features:
     - (make it scroll in its own thing?)
 
 Bugs:
-- Joining room doesn't properly set status (done, needs testing)
+- Joining room doesn't properly set status (doesn't add all playlist items)
 - Make scores comma seperated
 - Room Settings UI element (and maybe others) aren't being updated on the requisite Events
 - Getting kicked from a room as a referee doesn't reset the UI
 - still some OK: null kicking around (inviting ref)
-- how do you properly leave a room now lmao
+- how do you properly leave a room now lmao (restarting the app i guess...)
 - weirdness with dragging text around closing UIs? (i cant reproduce)
 - reloading page not retaining the state of referee-ing
