@@ -1,4 +1,6 @@
 // ── Theme Toggle ────────────────────────────────────────────────────────────
+
+import { User } from "./models.js"
 const themeToggle = document.getElementById('theme-toggle')
 
 function updateThemeIcon() {
@@ -28,6 +30,7 @@ fetch('mods.json').then(mod_res => {
 document.title = document.title + ": " + window.version
 
 // Stored Data TODO: make this into a proper class
+//             ^ blocking step for supporting multiple rooms
 let me;
 window.api.api.GetSelf().then (x => me = x.data)
 let players = {};
@@ -259,9 +262,10 @@ async function GetUser(user_id, normal) { // normal is true if it's a player, fa
     } else {
         console.log("grabbing new player!!")
         user = (await window.api.api.GetUser(user_id)).data
-        if (normal) players[user.id] = user
-        if (!normal) other_players[user.id] = user
-        return user
+        let ret = new User(user_id, user, null, null, null, null)
+        if (normal) players[user.id] = ret
+        if (!normal) other_players[user.id] = ret
+        return ret
     }
 }
 
@@ -324,7 +328,7 @@ async function logEvent(name, data) {
 
 
 function idFromUsername(username) {
-    let user = Object.keys(players).find(key => players[key].username == username)
+    let user = Object.keys(players).find(key => players[key].user.username == username)
     if (user == undefined) user = Object.keys(other_players).find(key => other_players[key].username == username)
     if (user != undefined) {
         return user;
@@ -575,7 +579,7 @@ function addVerboseMods(user_id, mods) { // might work, **definitely** needs tes
         const undefault_settings = mod.settings != null && Object.entries(mod.settings).length != 0
         if (undefault_settings) {
             empty = false
-            user_div.textContent = user != undefined ? user.username : user_id
+            user_div.textContent = user != undefined ? user.user.username : user_id
             mod_name.textContent = mod_info.Name
             mod_settings.textContent = settings_text
         }
@@ -1038,12 +1042,11 @@ function commandHandler(message) {
 
 // ── Event listeners ────────────────────────────────────────────────────────
 window.api.on.UserJoined(async info => {
-    const user = await GetUser(info.user_id, true)
-    console.log(user.username, "has joined!!")
-    addPlayer(info.user_id, "idle", user.username, "none")
-    players[info.user_id].state = "idle" // scuffed as hell but whatever
-    console.log("buh")
-
+    const user = await GetUser(info.user_id)
+    console.log(user.user.username, "has joined!!")
+    addPlayer(info.user_id, "idle", user.user.username, "none")
+    players[info.user_id].status = "idle"
+    players[info.user_id].team = "none"
 })
 window.api.on.UserLeft(info => {
     removePlayer(info.user_id)
@@ -1108,7 +1111,7 @@ window.api.on.UserStatusChanged(info => {
     const user_id = info.user_id
     const playerDiv = document.querySelector(`[data-user_id="${user_id}"]`)
     playerDiv.querySelector(".player-status").textContent = info.status
-    players[user_id].state = info.status
+    players[user_id].status = info.status
 })
 
 window.api.on.UserModsChanged(info => { // TODO: check if when playlistItem changes/removes if user mods get reset
@@ -1118,6 +1121,7 @@ window.api.on.UserModsChanged(info => { // TODO: check if when playlistItem chan
     let mod_str = mods.map(item => item.acronym).join(" ");
     playerDiv.querySelector(".player-mods").textContent = mod_str ? mod_str : "N/A"
     addVerboseMods(user_id, mods)
+    players[user_id].mods = mods
 })
 
 window.api.on.UserStyleChanged(info => {
@@ -1152,7 +1156,7 @@ window.api.on.MatchCompleted(info => {
 
 window.api.on.RollCompleted(async info => {
     let user = await GetUser(info.user_id)
-    addSystemMsg(`${user.username} rolled ${info.result}/${info.max}.`)
+    addSystemMsg(`${user.user.username} rolled ${info.result}/${info.max}.`)
 })
 
 window.api.api.onChatMessage(async buffer => {
@@ -1171,3 +1175,7 @@ window.api.api.onChatMessage(async buffer => {
     }
 })
 
+// just for personal use of testing
+window.players = players
+window.other_players = other_players
+window.osu = osu
