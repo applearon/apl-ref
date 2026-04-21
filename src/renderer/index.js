@@ -141,8 +141,9 @@ document.addEventListener('click', (e) => {
     // edit playlist modal
     const editPlaylistModal = document.getElementById('edit-playlist-modal')
     modalContent = editPlaylistModal.querySelector(".modal-content")
-    const editPlaylistTrigger = document.getElementById('edit-playlist-btn')
-    if (editPlaylistTrigger && !modalContent.contains(e.target) && !editPlaylistTrigger.contains(e.target)) {
+    //const editPlaylistTrigger = document.getElementById('edit-playlist-btn')
+    const editPlaylistTriggers = document.querySelectorAll('.edit-playlist-btn')
+    if (Object.values(editPlaylistTriggers) && !modalContent.contains(e.target) && !Object.values(editPlaylistTriggers).some((x) => x.contains(e.target))) {
         editPlaylistModal.classList.remove('visible')
     }
 
@@ -222,6 +223,7 @@ function setResult(id, result) {
 
 async function logEvent(name, data) {
     let isRes = false;
+    const keep_room_id = ["RefereeInvited"]
     if (data instanceof Promise) { // if it's a method we sent
         data = await data
         isRes = true;
@@ -238,7 +240,7 @@ async function logEvent(name, data) {
         time.textContent += data.success ? " Succeeded" : " Failed"
         data = data.success ? data.data : data.error
     } else {
-        delete data.room_id // dont need since this client only works 1 room at a time
+        if (!keep_room_id.includes(name)) delete data.room_id // dont need since this client only works 1 room at a time
     }
     const logData = document.createElement('div');
     if (data == null) {data = ''}
@@ -403,6 +405,7 @@ async function addPlaylistItem(playlist_id, ruleset_id, beatmap_id, required_mod
 
     const edit_btn = clone.querySelector(".edit-playlist-btn")
     edit_btn.addEventListener('click', () => {
+        console.log("hi chat")
         const modes = ["osu!", "taiko", "catch", "mania"]
       
         const textElements = edit_btn.parentNode.parentNode.parentNode.querySelectorAll(".playlist-item-text")
@@ -925,6 +928,10 @@ document.getElementById('close-room-btn').addEventListener('click', async () => 
 
 document.getElementById('chat-send-btn').addEventListener('click', async () => {
     // str('chat-input')
+    if(commandHandler(str('chat-input').trim())) {
+        document.getElementById('chat-input').value = ''
+        return;
+    }
     if (chat_channel_id != "" && str('chat-input').trim()) {
         window.api.api.SendMessage(chat_channel_id, str('chat-input'))
         document.getElementById('chat-input').value = ''
@@ -946,7 +953,7 @@ document.getElementById('ping-btn').addEventListener('click', async () => {
 })
 
 // chat parsing
-function commandHandler(username, message) {
+function commandHandler(message) {
     const commands = {
         "/roll": (max) => {
             osu.Roll(currentRoomId, {max: parseInt(max)})
@@ -1074,7 +1081,8 @@ window.api.api.onChatMessage(async buffer => {
             //console.log("ohmygah")
             console.log(msg.sender_id, msg.content)
             let user = await GetUser(msg.sender_id)
-            if (!commandHandler(user.username, msg.content)) addChatMsg(msg.content, user.username, user.avatar_url)
+            addChatMsg(msg.content, user.username, user.avatar_url)
+            //if (!commandHandler(user.username, msg.content)) addChatMsg(msg.content, user.username, user.avatar_url)
         }
     }
 })
