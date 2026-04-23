@@ -1086,8 +1086,8 @@ window.api.api.onChatMessage(async buffer => {
 
 
 // just for personal use of testing
-window.players = players
-window.other_players = other_players
 window.osu = osu
 
-window
+window.players = () => {return players}
+window.other_players = () => {return other_players}
+
