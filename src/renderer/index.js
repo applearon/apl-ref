@@ -31,8 +31,6 @@ document.title = document.title + ": " + window.version
 
 // Stored Data TODO: make this into a proper class
 //             ^ blocking step for supporting multiple rooms
-let me;
-window.api.api.GetSelf().then (x => me = x.data)
 let players = {};
 let other_players = {}; // removes calling too much, should be partially(?) replaced with referee list
 let playlistItems = {};
@@ -45,6 +43,13 @@ let password = ""
 let room_name = ""
 
 let countdown_id;
+
+let me;
+window.api.api.GetSelf().then (x => {
+    me = x.data
+    other_players[x.data.id] = new User(x.data.id, x.data)
+})
+
 
 async function ircStyleUsername(str) { // old mode is #14573534 for user id, and username otherwise
     if (str[0] == '#') {
@@ -1168,7 +1173,7 @@ window.api.api.onChatMessage(async buffer => {
         if (msg.channel_id == chat_channel_id) {
             //console.log("ohmygah")
             console.log(msg.sender_id, msg.content)
-            let user = await GetUser(msg.sender_id)
+            let user = (await GetUser(msg.sender_id)).user
             addChatMsg(msg.content, user.username, user.avatar_url)
             //if (!commandHandler(user.username, msg.content)) addChatMsg(msg.content, user.username, user.avatar_url)
         }
@@ -1179,3 +1184,4 @@ window.api.api.onChatMessage(async buffer => {
 window.osu = osu
 window.players = () => {return players}
 window.other_players = () => {return other_players}
+window.debugMode = () => debugMode()
