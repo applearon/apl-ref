@@ -28,3 +28,4 @@ Bugs:
 - how do you properly leave a room now lmao (restarting the app i guess...)
 - weirdness with dragging text around closing UIs? (i cant reproduce)
 - reloading page not retaining the state of referee-ing
+- (IMPORTANT) Occasionally osu!api doesn't work??? only recounted twice (mumei & possibly dgeist)
