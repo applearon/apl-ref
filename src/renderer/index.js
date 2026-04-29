@@ -329,7 +329,6 @@ function debugMode() {
     const ping = document.getElementById("debug-menu")
     ping.classList.add('visible')
 }
-
 function addPlayer(user_id, player_status, name, team) {
     // "idle", "ready", "playing", "finished_play", "spectating"
     const team_class = "team-" + team.toLowerCase() // only red and blue or none
@@ -759,6 +758,7 @@ document.getElementById('invite-player-confirm').addEventListener('click', async
     let user_id = int('popup-invite-userid')
     if (username) {
         const user = (await window.api.api.GetUser(username)).data;
+        console.log("wow,", user)
         user_id = user.id
     }
     const result = await osu.InvitePlayer(currentRoomId, user_id)
@@ -864,6 +864,10 @@ document.getElementById('join-room-btn').addEventListener('click', async () => {
         for (const playlist of playlists) {
             addPlaylistItem(playlist.id, playlist.ruleset_id, playlist.beatmap_id, playlist.required_mods, playlist.allowed_mods, playlist.freestyle, playlist.was_played)
             playlistItems[playlist.id] = playlist
+        }
+        for (const p of result.data.players) {
+            let user = await GetUser(p.user_id)
+            addPlayer(p.user_id, p.status, user.username, p.team ?? "none")
         }
 
         document.getElementById('cur-match-type').textContent = result.data.type
@@ -978,11 +982,11 @@ function commandHandler(message) {
 
 // ── Event listeners ────────────────────────────────────────────────────────
 window.api.on.UserJoined(async info => {
-    const user = await GetUser(info.user_id)
-    console.log(user.data.username, "has joined!!")
-    addPlayer(info.user_id, "idle", user.data.username, "none")
-    players[info.user_id] = user.data
+    const user = await GetUser(info.user_id, true)
+    console.log(user.username, "has joined!!")
+    addPlayer(info.user_id, "idle", user.username, "none")
     players[info.user_id].state = "idle" // scuffed as hell but whatever
+    console.log("buh")
 
 })
 window.api.on.UserLeft(info => {
