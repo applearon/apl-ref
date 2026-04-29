@@ -2,7 +2,8 @@ const signalR = require('@microsoft/signalr')
 const { setupEventHandlers } = require('./referee/events')
 const { COMMANDS } = require('./referee/commands')
 
-const SPECTATOR_SERVER_URL = 'https://spectator.ppy.sh'
+const IS_PROD = process.env.DEV_SERVER == null
+const SPECTATOR_SERVER_URL = IS_PROD ? 'https://spectator.ppy.sh' : 'https://dev.ppy.sh/'
 
 class RefereeClient {
     constructor(url = SPECTATOR_SERVER_URL, accessToken = null, sendToRenderer) {
@@ -16,7 +17,7 @@ class RefereeClient {
 
     async connect() {
         this.connection = new signalR.HubConnectionBuilder()
-            .withUrl(new URL('/referee', this.url).toString(), {
+            .withUrl(new URL(IS_PROD ? '/referee' : 'signalr/referee', this.url).toString(), {
                 accessTokenFactory: () => this.accessToken
             })
             .withAutomaticReconnect()

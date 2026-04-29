@@ -4,6 +4,8 @@ const path = require('path')
 
 const userDataPath = app.getPath('userData');
 
+const IS_PROD = process.env.DEV_SERVER == null
+const OSU_URL = IS_PROD ? 'osu.ppy.sh' : 'dev.ppy.sh'
 const CONFIG_PATH = path.join(userDataPath, 'config.json')
 const TOKEN_PATH = path.join(userDataPath, 'token.json')
 
@@ -11,8 +13,8 @@ const TOKEN_PATH = path.join(userDataPath, 'token.json')
 // We never actually listen on this port — Electron intercepts the redirect
 // via webContents will-redirect before it hits the network.
 const REDIRECT_URI = 'http://localhost:8084'
-const OSU_AUTH_BASE = 'https://osu.ppy.sh/oauth/authorize'
-const OSU_TOKEN_URL = 'https://osu.ppy.sh/oauth/token'
+const OSU_AUTH_BASE = `https://${OSU_URL}/oauth/authorize`
+const OSU_TOKEN_URL = `https://${OSU_URL}/oauth/token`
 const OAUTH_SCOPES = 'public identify multiplayer.write_manage chat.read chat.write'
 
 function readConfig() {

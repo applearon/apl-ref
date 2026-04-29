@@ -2,6 +2,9 @@ const { ipcMain } = require('electron')
 const { WebSocket } = require('ws')
 const { CMDS_SET } = require('../referee/commands')
 const { EVENTS } = require('../referee/events')
+const IS_PROD = process.env.DEV_SERVER == null
+const  OSU_SERVER = IS_PROD ? "osu.ppy.sh" : "dev.ppy.sh"
+
 function createHandler(getRefereeClient, handlerFn) {
     return async (event, ...args) => {
         const refereeClient = getRefereeClient()
@@ -57,7 +60,7 @@ function setupIpcHandlers(getRefereeClient) {
     })
     ipcMain.handle('GetUser', createQueryHandler(getRefereeClient, (client, user_id) => {
         const accessToken = client.accessToken;
-        const url = new URL(`https://osu.ppy.sh/api/v2/users/${user_id}/osu`);
+        const url = new URL(`https://${OSU_SERVER}/api/v2/users/${user_id}/osu`);
         //url.searchParams.append("key", "at")
         // ^ technically we want either or so...
         const headers = {
@@ -75,7 +78,7 @@ function setupIpcHandlers(getRefereeClient) {
     }))
     ipcMain.handle('GetSelf', createQueryHandler(getRefereeClient, (client) => {
         const accessToken = client.accessToken;
-        const url = new URL(`https://osu.ppy.sh/api/v2/me`);
+        const url = new URL(`https://${OSU_SERVER}/api/v2/me`);
         const headers = {
             "Content-Type": "application/json",
             "Accept": "application/json",
@@ -91,7 +94,7 @@ function setupIpcHandlers(getRefereeClient) {
     }))
     ipcMain.handle('SendMessage', createQueryHandler(getRefereeClient, (client, channel_id, message) => {
         const accessToken = client.accessToken;
-        const url = new URL(`https://osu.ppy.sh/api/v2/chat/channels/${channel_id}/messages`);
+        const url = new URL(`https://${OSU_SERVER}/api/v2/chat/channels/${channel_id}/messages`);
         const headers = {
             "Content-Type": "application/json",
             "Accept": "application/json",
@@ -110,7 +113,7 @@ function setupIpcHandlers(getRefereeClient) {
     }))
     ipcMain.handle('GetBeatmap', createQueryHandler(getRefereeClient, (client, beatmap_id) => {
         const accessToken = client.accessToken;
-        const url = new URL(`https://osu.ppy.sh/api/v2/beatmaps/${beatmap_id}`);
+        const url = new URL(`https://${OSU_SERVER}/api/v2/beatmaps/${beatmap_id}`);
         const headers = {
             "Content-Type": "application/json",
             "Accept": "application/json",
@@ -124,7 +127,7 @@ function setupIpcHandlers(getRefereeClient) {
     }))
     ipcMain.handle('GetScores', createQueryHandler(getRefereeClient, (client, room_id, playlist_id) => {
         const accessToken = client.accessToken;
-        const url = new URL(`https://osu.ppy.sh/api/v2/rooms/${room_id}/playlist/${playlist_id}/scores`);
+        const url = new URL(`https://${OSU_SERVER}/api/v2/rooms/${room_id}/playlist/${playlist_id}/scores`);
         const headers = {
             "Content-Type": "application/json",
             "Accept": "application/json",
@@ -145,8 +148,8 @@ function setupIpcHandlers(getRefereeClient) {
 
 function setupWSEvents(accessToken, sendFunc) {
     const headers = { Authorization: `Bearer ${accessToken}`};
-    
-    const ws = new WebSocket('wss://notify.ppy.sh', [], { headers });
+    const url = IS_PROD ? "wss://notify.ppy.sh" : "wss://dev.ppy.sh/home/notifications/feed"
+    const ws = new WebSocket(url, [], { headers }); // TODO: idk what the dev version of this is
     ws.on('open', () => {
         ws.send(JSON.stringify({ event: 'chat.start' }));
     })
