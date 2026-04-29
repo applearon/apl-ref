@@ -1042,11 +1042,11 @@ function commandHandler(message) {
 
 // ── Event listeners ────────────────────────────────────────────────────────
 window.api.on.UserJoined(async info => {
-    const user = await GetUser(info.user_id)
-    console.log(user.user.username, "has joined!!")
-    addPlayer(info.user_id, "idle", user.user.username, "none")
-    players[info.user_id].status = "idle"
-    players[info.user_id].team = "none"
+    const user = await GetUser(info.user_id, true)
+    console.log(user.username, "has joined!!")
+    addPlayer(info.user_id, "idle", user.username, "none")
+    players[info.user_id].state = "idle" // scuffed as hell but whatever
+    console.log("buh")
 })
 window.api.on.UserLeft(info => {
     removePlayer(info.user_id)
