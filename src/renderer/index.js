@@ -848,7 +848,7 @@ document.getElementById('make-room-btn').addEventListener('click', async () => {
         addPlaylistItem(playlist.id, playlist.ruleset_id, playlist.beatmap_id, playlist.required_mods, playlist.allowed_mods, playlist.freestyle, playlist.was_played)
         playlistItems[playlist.id] = playlist
 
-        document.getElementById('cur-match-type').textContent = result.data.type
+        document.getElementById('cur-match-type').textContent = result.data.state.type
     }
 })
 
@@ -870,7 +870,7 @@ document.getElementById('join-room-btn').addEventListener('click', async () => {
             addPlayer(p.user_id, p.status, user.username, p.team ?? "none")
         }
 
-        document.getElementById('cur-match-type').textContent = result.data.type
+        document.getElementById('cur-match-type').textContent = result.data.state.type
     }
 })
 
@@ -1011,8 +1011,14 @@ window.api.on.UserKicked(info => {
 window.api.on.RoomSettingsChanged(info => {
     room_name = info.name
     password = info.password
-    document.getElementById('room-name').textContent = info.name
-    document.getElementById('cur-match-type').textContent = info.type
+    let match_type = info.type
+    document.getElementById('room-name').textContent = room_name
+    document.getElementById('cur-match-type').textContent = match_type
+    document.getElementById('settings-name').value = room_name
+    document.getElementById('settings-password').value = password
+    document.getElementsByName("match_type")[0].checked = match_type == "head_to_head"
+    document.getElementsByName("match_type")[1].checked = match_type != "head_to_head"
+
 })
 window.api.on.PlaylistItemAdded(info => {
     const data = info.playlist_item
