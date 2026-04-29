@@ -540,17 +540,17 @@ function startTimer(seconds) {
     window.api.api.SendMessage(chat_channel_id, `Started a countdown for ${seconds} seconds`)
     let elapsed = 0
     countdown_id = setInterval(() => {
-        console.log(elapsed, seconds)
+        //console.log(elapsed, seconds)
         if (elapsed >= seconds) {
             clearInterval(countdown_id)
             window.api.api.SendMessage(chat_channel_id, "The countdown has ended.")
             countdown_id = null
             return;
         }
-        if (informTimes.includes(seconds-elapsed) || (seconds - elapsed) % 60 == 0) {
+        if (informTimes.includes(seconds - elapsed) || (seconds - elapsed) % 60 == 0) {
             let msg = "The countdown has "
-            msg += (seconds-elapsed) >= 60 ? `${Math.floor(seconds / 60)} minutes ` : ""
-            msg += `${(seconds-elapsed) % 60} seconds remaining.`
+            msg += (seconds-elapsed) >= 60 ? `${Math.floor((seconds - elapsed) / 60)} minutes ` : ""
+            msg += (seconds - elapsed) % 60 != 0 ? `${(seconds - elapsed) % 60} seconds remaining.` : "remaining."
             window.api.api.SendMessage(chat_channel_id, msg)
         }
         elapsed += 1;
