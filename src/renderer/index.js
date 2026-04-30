@@ -393,12 +393,6 @@ async function addPlaylistItem(playlist_id, ruleset_id, beatmap_id, required_mod
     freestyle_text.querySelector(".value").textContent = freestyle.toString()
     clone.querySelector(".playlist-item").appendChild(freestyle_text);
 
-    const played_text = textTemplate.content.cloneNode(true);
-    played_text.querySelector(".label").textContent = "Played"
-    played_text.querySelector(".value").textContent = was_played.toString()
-    clone.querySelector(".playlist-item").appendChild(played_text);
-
-
     clone.querySelector(".playlist-item-ruleset").textContent = modes[ruleset_id]
 
     clone.querySelector(".playlist-item").classList.add(playlist_id)
