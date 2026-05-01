@@ -98,13 +98,16 @@ async function cmdRunner(cmd, ...args) {
 
 function handleModChange(args) {
     // "FM" and "NM" also
-    if (args.length != 1) {
+    if (args.length < 1) {
         console.log("bah youre doing it wrong");
         // TODO add system message saying it's wrong
         addSystemMsg("Invalid command")
         return false;
     }
-    const mods = args[0].split("+")
+    let mods = args[0].split("+")
+    // this is TECHNICALLY not up to spec of lazer tournament
+    // but god damnit if stable refs cant have their muscle memory what is even the point
+    if (mods.length == 1 && args.length >= 2) mods = args
     const required_mods = []
     let allowed_mods = []
     for (const mod of mods) {
