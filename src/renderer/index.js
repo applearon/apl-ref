@@ -680,8 +680,8 @@ async function addScore(room_id, playlist_id) {
     }
     if (!head_to_head) {
         const teams = document.querySelectorAll(".score")
-        teams[0].querySelector('.score-team-total').textContent = red_score
-        teams[1].querySelector('.score-team-total').textContent = blue_score
+        teams[0].querySelector('.score-team-total').textContent = red_score.toLocaleString()
+        teams[1].querySelector('.score-team-total').textContent = blue_score.toLocaleString()
     }
     
 }
@@ -1131,10 +1131,10 @@ window.api.on.UserTeamChanged(info => {
     user_UI.classList.add("team-" + info.team)
 })
 window.api.on.CountdownStarted(info => {
-    document.getElementById('cur-match-countdown').textContent = info.seconds
+    //document.getElementById('cur-match-countdown').textContent = info.seconds
 })
 window.api.on.CountdownStopped(info => {
-    document.getElementById('cur-match-countdown').textContent = "-"
+    //document.getElementById('cur-match-countdown').textContent = "-"
 })
 window.api.on.MatchStarted(info => {
     document.getElementById('cur-match-status').textContent = "Playing"
