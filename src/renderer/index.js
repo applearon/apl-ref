@@ -25,6 +25,8 @@ fetch('mods.json').then(mod_res => {
     mod_res.json().then(mods => MODS = mods)
 })
 
+document.title = document.title + ": " + window.version
+
 // Stored Data TODO: make this into a proper class
 let me;
 window.api.api.GetSelf().then (x => me = x.data)
@@ -95,14 +97,71 @@ async function cmdRunner(cmd, ...args) {
 }
 
 function handleModChange(args) {
-    // this is so stupid
-    const fm = args.map((x) => x.toLowerCase()).includes('freemod')
-    const mods = [ 'hd', 'hr', 'ez', 'fl', 'rx', 'so', 'nf', 'ap' ].map(m => ({acronym: m}))
+    // "FM" and "NM" also
+    if (args.length != 1) {
+        console.log("bah youre doing it wrong");
+        // TODO add system message saying it's wrong
+        addSystemMsg("Invalid command")
+        return false;
+    }
+    const mods = args[0].split("+")
+    const required_mods = []
+    let allowed_mods = []
+    for (const mod of mods) {
+        if (mod.length < 2) {
+            addSystemMsg("Invalid command")
+            return false
+        }
+        const mod_acronym = mod.slice(0,2)
+        if (mod_acronym.toLowerCase() == "fm") {
+            allowed_mods = MODS[0].Mods.filter(x => x.ValidForMultiplayerAsFreeMod && x.Type != "System" && x.UserPlayable).map(x => {return {acronym: x.Acronym}}) // i dont care anymore
+            // TODO: make this work with other gamemodes
+            continue
+        }
+        if (mod.length == 2) {
+            required_mods.push({acronym: mod}) // no settings
+        } else {
+            try {
+                const mod_setting_names = MODS[0].Mods.find(x => x.Acronym == mod_acronym).Settings.map(x => x.Name)
+                // ModType.System || !mod.UserPlayable
+                // ValidForMultiplayerAsFreeMod
+                let settings = JSON.parse(mod.slice(2))
+                if (settings.length > mod_setting_names.length) {
+                    addSystemMsg("Invalid settings: " + mod + ": too many arguments")
+                    return false
+                }
+                let req_settings = {}
+                for (const [i, s] of settings.entries()) {
+                    req_settings[mod_setting_names[i]] = s
+                }
+                required_mods.push({acronym: mod_acronym, settings: req_settings})
+            } catch {
+                addSystemMsg("Invalid settings: " + mod + ": Couldnt parse settings")
+                return false
+            }
+        }
+    }
+    allowed_mods = allowed_mods.filter(x => !required_mods.map(x=> x.acronym).includes(x.acronym))
+    let required_mods_lst = required_mods.map(x=> x.acronym)
+    let incompat_lst = [...new Set(MODS[0].Mods.filter(x => required_mods_lst.includes(x.Acronym)).map(x => x.IncompatibleMods).flat(1))]
+    allowed_mods = allowed_mods.filter(x => !incompat_lst.includes(x.acronym))
+    console.log(required_mods)
+    console.log(allowed_mods)
     return {
-        required_mods: fm ? null : args.map((x) => {return {acronym: x}}),
-        allowed_mods: fm ? mods : [] // assuming only want normal mods..
+        required_mods,
+        allowed_mods
     }
 }
+// this is the old version that uses bancho-style !mp mods
+//function handleModChange(args) {
+//    // this is so stupid
+//    const fm = args.map((x) => x.toLowerCase()).includes('freemod')
+//    const mods = [ 'hd', 'hr', 'ez', 'fl', 'rx', 'so', 'nf', 'ap' ].map(m => ({acronym: m}))
+//    return {
+//        required_mods: fm ? null : args.map((x) => {return {acronym: x}}),
+//        allowed_mods: fm ? mods : [] // assuming only want normal mods..
+//    }
+//}
 
 // ── UI helpers ──────────────────────────────────────────────────────────────
 

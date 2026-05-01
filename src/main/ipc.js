@@ -2,6 +2,7 @@ const { ipcMain } = require('electron')
 const { WebSocket } = require('ws')
 const { CMDS_SET } = require('../referee/commands')
 const { EVENTS } = require('../referee/events')
+const { version } = require('../../package.json')
 const IS_PROD = process.env.DEV_SERVER == null
 const  OSU_SERVER = IS_PROD ? "osu.ppy.sh" : "dev.ppy.sh"
 
@@ -53,7 +54,7 @@ function createQueryHandler(getRefereeClient, queryFn) {
 
 function setupIpcHandlers(getRefereeClient) {
     ipcMain.handle('get-api-data', async () => {
-        return [CMDS_SET, EVENTS]
+        return [CMDS_SET, EVENTS, version]
     })
     CMDS_SET.forEach(cmd => {
         ipcMain.handle(cmd, genericHandler(getRefereeClient, cmd));

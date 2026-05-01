@@ -3,6 +3,7 @@ const { contextBridge, ipcRenderer } = require('electron')
 ipcRenderer.invoke('get-api-data').then(API_DATA => {
     const COMMANDS = API_DATA[0];
     const EVENTS = API_DATA[1];
+    const VERSION = API_DATA[2];
     
     const api = {}
     for (const cmd of COMMANDS) {
@@ -33,4 +34,5 @@ ipcRenderer.invoke('get-api-data').then(API_DATA => {
         },
         on: on,
     })
+    contextBridge.exposeInMainWorld('version', VERSION)
 })
