@@ -56,7 +56,7 @@ async function cmdRunner(cmd, ...args) {
         "name": () => {return osu.ChangeRoomSettings(currentRoomId, {name: args.join(' ')})},
         "invite": async () => {return osu.InvitePlayer(currentRoomId, await ircStyleUsername(args[0]))},
         "lock": () => {return osu.SetLockState(currentRoomId, {locked: true})},
-        "unlock": () => {return osu.SetLockState(currentRoomId, {"locked": false})},
+        "unlock": () => {return osu.SetLockState(currentRoomId, {locked: false})},
         "set": () => {return osu.ChangeRoomSettings(currentRoomId, {type: args[0] == 0 ? "head_to_head" : "team_versus"})},
         "start": () => {return osu.StartMatch(currentRoomId, {countdown: parseInt(args[0])})},
         "abort": () => {return osu.AbortMatch(currentRoomId)},
@@ -119,6 +119,9 @@ function handleModChange(args) {
         if (mod_acronym.toLowerCase() == "fm") {
             allowed_mods = MODS[0].Mods.filter(x => x.ValidForMultiplayerAsFreeMod && x.Type != "System" && x.UserPlayable).map(x => {return {acronym: x.Acronym}}) // i dont care anymore
             // TODO: make this work with other gamemodes
+            continue
+        }
+        if (mod_acronym.toLowerCase() == "nm") {
             continue
         }
         if (mod.length == 2) {
@@ -833,10 +836,11 @@ document.getElementById('invite-player-confirm').addEventListener('click', async
 const toggleLockBtn = document.getElementById('toggle-lock-btn')
 toggleLockBtn.addEventListener('click', async () => {
     const unlocked = toggleLockBtn.textContent == "Unlocked"
-    const result = await osu.SetLockState(currentRoomId, {"locked": !unlocked});
-    if (result.success) {
-        toggleLockBtn.textContent = (!unlocked) ? "Unlocked" : "Locked";
-    }
+    const result = await osu.SetLockState(currentRoomId, {"locked": unlocked});
+    console.log(unlocked)
+    ///if (result.success) {
+    ///    toggleLockBtn.textContent = (!unlocked) ? "Unlocked" : "Locked";
+    ///}
 })
 
 document.getElementById('popup-invite-username').addEventListener('keydown', (event) => { // clicks when press enter
@@ -1076,6 +1080,15 @@ window.api.on.RoomSettingsChanged(info => {
     document.getElementsByName("match_type")[1].checked = match_type != "head_to_head"
 
 })
+
+window.api.on.MatchStateChanged(info => {
+    const locked = info.state.locked
+    const type = info.state.type
+    document.getElementById('toggle-lock-btn').textContent = locked ? "Locked" : "Unlocked"
+    if (type) document.getElementById('cur-match-type').textContent = type
+    console.log("wa",type)
+})
+
 window.api.on.PlaylistItemAdded(info => {
     const data = info.playlist_item
     if (data.was_played) {
