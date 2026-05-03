@@ -8,7 +8,7 @@
     "make": "electron-forge make",
     "test": "echo \"Error: no test specified\" && exit 1",
     "package": "electron-forge package",
-    "gensources": "cd scripts && ./updateSrc.sh && cd .."
+    "gensources": "node scripts/updateSrc.js"
   },
   "author": "applearon",
   "license": "MIT",
