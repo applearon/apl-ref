@@ -18,7 +18,7 @@ New Features:
 - system message when everyone is ready
 - resize scores or starting size or something to make it not scroll down when scores are added
     - (make it scroll in its own thing?)
-
+- Add Map Stats (length, cs, ar, etc) somewhere (maybe only current?)
 
 Bugs:
 - Room Settings UI element (and maybe others) aren't being updated on the requisite Events
@@ -29,6 +29,7 @@ Bugs:
     - Probably should just fully remove that for now
 - reloading page not retaining the state of referee-ing
 - (IMPORTANT) Occasionally osu!api doesn't work??? only recounted once (mumei)
+- Chat is sometimes broken on first run (token doesn't exist yet or something)
 
 # 1.0 Blocking Issues
 - Support operating multiple rooms at once
@@ -43,6 +44,5 @@ Bugs:
 - Show required_mod settings
 - Edit required_mod settings
 - Host a proper scrim/tournament with apl!ref
-- !mp commands tested and properly update all UI elements
-    - Make sure no bad states can be reached
+- !mp commands tested (addref, removeref need testing)
     - Make sure they all align with lazer mp standards

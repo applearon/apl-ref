@@ -60,7 +60,8 @@ async function cmdRunner(cmd, ...args) {
         "set": () => {return osu.ChangeRoomSettings(currentRoomId, {type: args[0] == 0 ? "head_to_head" : "team_versus"})},
         "start": () => {return osu.StartMatch(currentRoomId, {countdown: parseInt(args[0])})},
         "abort": () => {return osu.AbortMatch(currentRoomId)},
-        "team": async () => {return osu.MoveCustom(currentRoomId, {user_id: await ircStyleUsername(args[0]), team: args[0]})},
+        "team": async () => {return osu.MoveUser(currentRoomId, {user_id: await ircStyleUsername(args[0]), team: args[1]})},
+        "move": () => {return addSystemMsg("Unimplemented Command")},
         "map": () => {return osu.EditCurrentPlaylistItem(currentRoomId, {beatmap_id: parseInt(args[0]), ruleset_id: parseInt(args[1]) ?? 0 })},
         "mods": () => {return osu.EditCurrentPlaylistItem(currentRoomId, handleModChange(args))},
         "timer": () => {
@@ -78,13 +79,25 @@ async function cmdRunner(cmd, ...args) {
         "kick": async () => {return osu.KickPlayer(currentRoomId, await ircStyleUsername(args[0]))},
         "ban": async () => {return osu.BanUser(currentRoomId, await ircStyleUsername(args[0]))},
         "password": () => {return osu.ChangeRoomSettings(currentRoomId, {password: args[0]})},
-        "addref": async () => {return osu.AddReferee(currentRoomId, await ircStyleUsername(args[0]))},
+        "addref": async () => {return osu.AddReferee(currentRoomId, await ircStyleUsername(args[0]))}, // technically needs to be tested
         "removeref": async () => {return osu.RemoveReferee(currentRoomId, await ircStyleUsername(args[0]))},
         "listrefs": () => {return addSystemMsg("Unimplemented")}, // need custom logic
-        "close": () => {return osu.CloseRoom(currentRoomId)}, // needs to update UI
+        "close": () => {
+            osu.CloseRoom(currentRoomId)
+            hideRoomActions() // copied around, TODO generalize
+            showRoomCreation()
+            connected = false
+            players = {}
+            playlistItems = {}
+            refreshPlaylistItems()
+            chat_channel_id = ""
+    
+            document.getElementById("chat-messages").innerHTML = '<div id="no-messages" class="text-gray-500 dark:text-gray-400 text-sm italic">No messages yet...</div>'
+        },
         "help": () => {
+            // TODO: add explainations for subcommands
             return addSystemMsg(Object.keys(map).join(', '))
-        }, // expected 0 args and also needs custom logic
+        },
     }
     if (!map[cmd]) {
         addSystemMsg(`Invalid command: ${cmd}`)
@@ -1171,7 +1184,10 @@ window.api.on.RollCompleted(async info => {
 window.api.api.onChatMessage(async buffer => {
     if (chat_channel_id == "") return;
     const data = JSON.parse(buffer)
-    if (data.event != "chat.message.new") return;
+    if (data.event != "chat.message.new") {
+        console.log(data)
+        return;
+    };
     const messages = data.data.messages
     for (const msg of messages) {
         if (msg.channel_id == chat_channel_id) {
