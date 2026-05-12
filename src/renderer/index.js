@@ -43,6 +43,9 @@ let password = ""
 let room_name = ""
 
 let countdown_id;
+// TODO this is so cursed and i have to like rewrite a significant portion of this
+// but it works for now so whatever
+const addingUser = new Map();
 
 let me;
 window.api.api.GetSelf().then (x => {
@@ -573,9 +576,9 @@ function refreshPlaylistItems() {
 }
 
 
-function addVerboseMods(user_id, mods) { // might work, **definitely** needs testing
+async function addVerboseMods(user_id, mods) { // might work, **definitely** needs testing
     // TODO add the user's name to the UI & make it pretty
-    let user = players[user_id] ?? other_players[user_id] // other players is literally just for testing
+    let user = await GetUser(user_id)
     const verboseMods = document.getElementById("mods-verbose-container");
     const cur = verboseMods.querySelector(`[data-user_id="${user_id}"]`)
     const template = document.getElementById("player-mods-verbose");
@@ -949,7 +952,7 @@ document.getElementById('join-room-btn').addEventListener('click', async () => {
         }
         for (const p of result.data.players) {
             let user = await GetUser(p.user_id)
-            addPlayer(p.user_id, p.status, user.username, p.team ?? "none")
+            addPlayer(p.user_id, p.status, user.user.username, p.team ?? "none")
         }
 
         document.getElementById('cur-match-type').textContent = result.data.state.type
@@ -1064,11 +1067,15 @@ function commandHandler(message) {
 
 // ── Event listeners ────────────────────────────────────────────────────────
 window.api.on.UserJoined(async info => {
+    let resolveFn;
+    const promise = new Promise(resolve => resolveFn = resolve);
+    addingUser.set(info.user_id, promise)
     const user = await GetUser(info.user_id, true)
     console.log(user.user.username, "has joined!!")
     addPlayer(info.user_id, "idle", user.user.username, "none")
     players[info.user_id].status = "idle"
     players[info.user_id].team = "none"
+    resolveFn()
 })
 window.api.on.UserLeft(info => {
     removePlayer(info.user_id)
@@ -1160,13 +1167,16 @@ window.api.on.UserStyleChanged(info => {
     // TODO fix this i guess
 })
 
-window.api.on.UserTeamChanged(info => {
-    const user_id = info.user_id;
+window.api.on.UserTeamChanged(async info => {
+    const user_id = info.user_id; // TODO this breaks if the JoinUser isn't done yet
+    if (addingUser.has(user_id)) {
+        await addingUser.get(user_id)
+    }
     const user_UI = document.querySelector(`[data-user_id="${user_id}"]`).querySelector(".player-team")
     console.log(user_id)
     console.log(user_UI)
     user_UI.classList.remove("team-none", "team-red", "team-blue")
-    user_UI.classList.add("team-" + info.team)
+    user_UI.classList.add("team-" + info.team) // also TODO am i changing the player's team in the array
 })
 window.api.on.CountdownStarted(info => {
     //document.getElementById('cur-match-countdown').textContent = info.seconds
