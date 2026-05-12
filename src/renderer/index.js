@@ -573,6 +573,33 @@ function refreshPlaylistItems() {
         console.log(item)
         addPlaylistItem(item.id, item.ruleset_id, item.beatmap_id, item.required_mods, item.allowed_mods, item.freestyle, item.was_played)
     }
+    // i have no idea if it's actually the current..
+    let cur = Object.values(playlistItems).filter(y => y.order == 0)[0];
+    // TODO: this is copy pasted from addVerboseMods
+    const req_mods_div = document.getElementById('req-verbose-mods')
+    const mod_list = req_mods_div.querySelector(".mods-list")
+    const mod_template = document.getElementById("player-mod-item")
+    let empty = true
+    mod_list.innerHTML = ""
+    for (const mod of cur.required_mods) {
+        const mod_clone = mod_template.content.cloneNode(true);
+        const settings_div = mod_clone.querySelector(".mod-item")
+        let mod_name = settings_div.querySelector(".mod-item-name")
+        let mod_settings = settings_div.querySelector(".mod-item-settings")
+        const mod_info = MODS[0].Mods.find(x => x.Acronym == mod.acronym)
+        // settings is in the form of {option: number|string|boolean} im pretty sure
+        let settings_text = ""
+        for (const setting of Object.entries(mod.settings)) {
+            settings_text += `${setting[0]}:${setting[1]}, `
+        }
+        const undefault_settings = mod.settings != null && Object.entries(mod.settings).length != 0
+        if (undefault_settings) {
+            empty = false
+            mod_name.textContent = mod_info.Name
+            mod_settings.textContent = settings_text
+        }
+        if (undefault_settings) mod_list.appendChild(mod_clone)
+    }
 }
 
 
@@ -1224,3 +1251,5 @@ window.osu = osu
 window.players = () => {return players}
 window.other_players = () => {return other_players}
 window.debugMode = () => debugMode()
+window.playlistItems = () => {return playlistItems}
+window.addVerboseMods = () => {return addVerboseMods}
