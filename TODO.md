@@ -30,7 +30,7 @@ Bugs:
 - reloading page not retaining the state of referee-ing
 - (IMPORTANT) Occasionally osu!api doesn't work??? only recounted once (mumei)
 - Chat is sometimes broken on first run (token doesn't exist yet or something)
-
+    - Maybe with refreshing the token not working??
 # 1.0 Blocking Issues
 - Support operating multiple rooms at once
 - Notification sounds
@@ -41,8 +41,9 @@ Bugs:
     - Incl. fix score UI scrolling
 - Make resizing not completely kill itself
     - Shrink sidebars on smaller screens
-- Show required_mod settings
 - Edit required_mod settings
 - Host a proper scrim/tournament with apl!ref
 - !mp commands tested (addref, removeref need testing)
     - Make sure they all align with lazer mp standards
+- Figure out how to determine the proper mod settings order
+    - Maybe just check every single one from the docs but that's cursed

@@ -75,6 +75,16 @@ async function cmdRunner(cmd, ...args) {
         "move": () => {return addSystemMsg("Unimplemented Command")},
         "map": () => {return osu.EditCurrentPlaylistItem(currentRoomId, {beatmap_id: parseInt(args[0]), ruleset_id: parseInt(args[1]) ?? 0 })},
         "mods": () => {return osu.EditCurrentPlaylistItem(currentRoomId, handleModChange(args))},
+        "allowed_mods": () => {
+            let mods = args[0].split("+")
+            // this is TECHNICALLY not up to spec of lazer tournament
+            // but god damnit if stable refs cant have their muscle memory what is even the point
+            if (mods.length == 1 && args.length >= 2) mods = args
+            
+            mods = mods.map(x => {return {acronym: x.toUpperCase()}});
+            return osu.EditCurrentPlaylistItem(currentRoomId, {allowed_mods: mods});
+
+        }, // CUSTOM COMMAND
         "timer": () => {
             clearInterval(countdown_id);
             countdown_id = startTimer(parseInt(args[0]));
@@ -121,6 +131,7 @@ async function cmdRunner(cmd, ...args) {
 }
 
 function handleModChange(args) {
+    const DA_ORDER = [0,2,3,1,4]
     // "FM" and "NM" also
     if (args.length < 1) {
         console.log("bah youre doing it wrong");
@@ -161,8 +172,10 @@ function handleModChange(args) {
                     return false
                 }
                 let req_settings = {}
-                for (const [i, s] of settings.entries()) {
-                    req_settings[mod_setting_names[i]] = s
+                const is_da = mod_acronym.toLowerCase() == "da"
+                for (const [i, s] of settings.entries()) { // TODO: i need to order this god dammit
+                    // forced order this is some BS im killing myself idk what else to do
+                    req_settings[mod_setting_names[is_da ? DA_ORDER[i] : i]] = s
                 }
                 required_mods.push({acronym: mod_acronym, settings: req_settings})
             } catch {
