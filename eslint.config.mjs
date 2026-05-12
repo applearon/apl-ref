@@ -5,7 +5,7 @@ import stylistic from '@stylistic/eslint-plugin'
 
 export default defineConfig([
     { files: ["**/*.{js,mjs,cjs}"], plugins: { js }, extends: ["js/recommended"], languageOptions: { globals: {...globals.browser, ...globals.node} } },
-    { files: ["**/*.js"], languageOptions: { sourceType: "commonjs" } },
+    { files: ["**/*.js"], languageOptions: { sourceType: "module" } },
     {
         rules: {
             "no-unused-vars": "warn",

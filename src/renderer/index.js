@@ -1,4 +1,6 @@
 // ── Theme Toggle ────────────────────────────────────────────────────────────
+
+import { User } from "./models.js"
 const themeToggle = document.getElementById('theme-toggle')
 
 function updateThemeIcon() {
@@ -28,8 +30,7 @@ fetch('mods.json').then(mod_res => {
 document.title = document.title + ": " + window.version
 
 // Stored Data TODO: make this into a proper class
-let me;
-window.api.api.GetSelf().then (x => me = x.data)
+//             ^ blocking step for supporting multiple rooms
 let players = {};
 let other_players = {}; // removes calling too much, should be partially(?) replaced with referee list
 let playlistItems = {};
@@ -42,6 +43,16 @@ let password = ""
 let room_name = ""
 
 let countdown_id;
+// TODO this is so cursed and i have to like rewrite a significant portion of this
+// but it works for now so whatever
+const addingUser = new Map();
+
+let me;
+window.api.api.GetSelf().then (x => {
+    me = x.data
+    other_players[x.data.id] = new User(x.data.id, x.data)
+})
+
 
 async function ircStyleUsername(str) { // old mode is #14573534 for user id, and username otherwise
     if (str[0] == '#') {
@@ -275,9 +286,10 @@ async function GetUser(user_id, normal) { // normal is true if it's a player, fa
     } else {
         console.log("grabbing new player!!")
         user = (await window.api.api.GetUser(user_id)).data
-        if (normal) players[user.id] = user
-        if (!normal) other_players[user.id] = user
-        return user
+        let ret = new User(user_id, user, null, null, null, null)
+        if (normal) players[user.id] = ret
+        if (!normal) other_players[user.id] = ret
+        return ret
     }
 }
 
@@ -340,7 +352,7 @@ async function logEvent(name, data) {
 
 
 function idFromUsername(username) {
-    let user = Object.keys(players).find(key => players[key].username == username)
+    let user = Object.keys(players).find(key => players[key].user.username == username)
     if (user == undefined) user = Object.keys(other_players).find(key => other_players[key].username == username)
     if (user != undefined) {
         return user;
@@ -561,12 +573,39 @@ function refreshPlaylistItems() {
         console.log(item)
         addPlaylistItem(item.id, item.ruleset_id, item.beatmap_id, item.required_mods, item.allowed_mods, item.freestyle, item.was_played)
     }
+    // i have no idea if it's actually the current..
+    let cur = Object.values(playlistItems).filter(y => y.order == 0)[0];
+    // TODO: this is copy pasted from addVerboseMods
+    const req_mods_div = document.getElementById('req-verbose-mods')
+    const mod_list = req_mods_div.querySelector(".mods-list")
+    const mod_template = document.getElementById("player-mod-item")
+    let empty = true
+    mod_list.innerHTML = ""
+    for (const mod of cur.required_mods) {
+        const mod_clone = mod_template.content.cloneNode(true);
+        const settings_div = mod_clone.querySelector(".mod-item")
+        let mod_name = settings_div.querySelector(".mod-item-name")
+        let mod_settings = settings_div.querySelector(".mod-item-settings")
+        const mod_info = MODS[0].Mods.find(x => x.Acronym == mod.acronym)
+        // settings is in the form of {option: number|string|boolean} im pretty sure
+        let settings_text = ""
+        for (const setting of Object.entries(mod.settings)) {
+            settings_text += `${setting[0]}:${setting[1]}, `
+        }
+        const undefault_settings = mod.settings != null && Object.entries(mod.settings).length != 0
+        if (undefault_settings) {
+            empty = false
+            mod_name.textContent = mod_info.Name
+            mod_settings.textContent = settings_text
+        }
+        if (undefault_settings) mod_list.appendChild(mod_clone)
+    }
 }
 
 
-function addVerboseMods(user_id, mods) { // might work, **definitely** needs testing
+async function addVerboseMods(user_id, mods) { // might work, **definitely** needs testing
     // TODO add the user's name to the UI & make it pretty
-    let user = players[user_id] ?? other_players[user_id] // other players is literally just for testing
+    let user = await GetUser(user_id)
     const verboseMods = document.getElementById("mods-verbose-container");
     const cur = verboseMods.querySelector(`[data-user_id="${user_id}"]`)
     const template = document.getElementById("player-mods-verbose");
@@ -591,7 +630,7 @@ function addVerboseMods(user_id, mods) { // might work, **definitely** needs tes
         const undefault_settings = mod.settings != null && Object.entries(mod.settings).length != 0
         if (undefault_settings) {
             empty = false
-            user_div.textContent = user != undefined ? user.username : user_id
+            user_div.textContent = user != undefined ? user.user.username : user_id
             mod_name.textContent = mod_info.Name
             mod_settings.textContent = settings_text
         }
@@ -940,7 +979,7 @@ document.getElementById('join-room-btn').addEventListener('click', async () => {
         }
         for (const p of result.data.players) {
             let user = await GetUser(p.user_id)
-            addPlayer(p.user_id, p.status, user.username, p.team ?? "none")
+            addPlayer(p.user_id, p.status, user.user.username, p.team ?? "none")
         }
 
         document.getElementById('cur-match-type').textContent = result.data.state.type
@@ -1055,12 +1094,15 @@ function commandHandler(message) {
 
 // ── Event listeners ────────────────────────────────────────────────────────
 window.api.on.UserJoined(async info => {
+    let resolveFn;
+    const promise = new Promise(resolve => resolveFn = resolve);
+    addingUser.set(info.user_id, promise)
     const user = await GetUser(info.user_id, true)
-    console.log(user.username, "has joined!!")
-    addPlayer(info.user_id, "idle", user.username, "none")
-    players[info.user_id].state = "idle" // scuffed as hell but whatever
-    console.log("buh")
-
+    console.log(user.user.username, "has joined!!")
+    addPlayer(info.user_id, "idle", user.user.username, "none")
+    players[info.user_id].status = "idle"
+    players[info.user_id].team = "none"
+    resolveFn()
 })
 window.api.on.UserLeft(info => {
     removePlayer(info.user_id)
@@ -1134,7 +1176,7 @@ window.api.on.UserStatusChanged(info => {
     const user_id = info.user_id
     const playerDiv = document.querySelector(`[data-user_id="${user_id}"]`)
     playerDiv.querySelector(".player-status").textContent = info.status
-    players[user_id].state = info.status
+    players[user_id].status = info.status
 })
 
 window.api.on.UserModsChanged(info => { // TODO: check if when playlistItem changes/removes if user mods get reset
@@ -1144,6 +1186,7 @@ window.api.on.UserModsChanged(info => { // TODO: check if when playlistItem chan
     let mod_str = mods.map(item => item.acronym).join(" ");
     playerDiv.querySelector(".player-mods").textContent = mod_str ? mod_str : "N/A"
     addVerboseMods(user_id, mods)
+    players[user_id].mods = mods
 })
 
 window.api.on.UserStyleChanged(info => {
@@ -1151,13 +1194,16 @@ window.api.on.UserStyleChanged(info => {
     // TODO fix this i guess
 })
 
-window.api.on.UserTeamChanged(info => {
-    const user_id = info.user_id;
+window.api.on.UserTeamChanged(async info => {
+    const user_id = info.user_id; // TODO this breaks if the JoinUser isn't done yet
+    if (addingUser.has(user_id)) {
+        await addingUser.get(user_id)
+    }
     const user_UI = document.querySelector(`[data-user_id="${user_id}"]`).querySelector(".player-team")
     console.log(user_id)
     console.log(user_UI)
     user_UI.classList.remove("team-none", "team-red", "team-blue")
-    user_UI.classList.add("team-" + info.team)
+    user_UI.classList.add("team-" + info.team) // also TODO am i changing the player's team in the array
 })
 window.api.on.CountdownStarted(info => {
     //document.getElementById('cur-match-countdown').textContent = info.seconds
@@ -1178,7 +1224,7 @@ window.api.on.MatchCompleted(info => {
 
 window.api.on.RollCompleted(async info => {
     let user = await GetUser(info.user_id)
-    addSystemMsg(`${user.username} rolled ${info.result}/${info.max}.`)
+    addSystemMsg(`${user.user.username} rolled ${info.result}/${info.max}.`)
 })
 
 window.api.api.onChatMessage(async buffer => {
@@ -1193,10 +1239,17 @@ window.api.api.onChatMessage(async buffer => {
         if (msg.channel_id == chat_channel_id) {
             //console.log("ohmygah")
             console.log(msg.sender_id, msg.content)
-            let user = await GetUser(msg.sender_id)
+            let user = (await GetUser(msg.sender_id)).user
             addChatMsg(msg.content, user.username, user.avatar_url)
             //if (!commandHandler(user.username, msg.content)) addChatMsg(msg.content, user.username, user.avatar_url)
         }
     }
 })
 
+// just for personal use of testing
+window.osu = osu
+window.players = () => {return players}
+window.other_players = () => {return other_players}
+window.debugMode = () => debugMode()
+window.playlistItems = () => {return playlistItems}
+window.addVerboseMods = () => {return addVerboseMods}
