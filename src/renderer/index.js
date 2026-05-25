@@ -1,6 +1,7 @@
 // ── Theme Toggle ────────────────────────────────────────────────────────────
 
-import { User } from "./models.js"
+import { User, Event, EventQueue, Room } from "./models.js"
+import { idFromUsername, osu, logEvent } from "./utils.js"
 const themeToggle = document.getElementById('theme-toggle')
 
 function updateThemeIcon() {
@@ -37,6 +38,9 @@ let playlistItems = {};
 let beatmaps = {};
 let chat_channel_id = ""
 let connected = false;
+
+let Queue;
+let room;
 
 let editing_playlist_item = 0;
 let password = ""
@@ -272,38 +276,14 @@ let currentRoomId = null
 
 
 // ── Helpers ───────────────────────────────────────────────────────────────
-let objs = Object.entries(window.api.send)
-let osu = {}
-for (const cmd of objs) {
-    osu[cmd[0]] = (...args) => {
-        const res = cmd[1](...args)
-        logEvent(cmd[0], res)
-        return res
-    }
-}
 
 // automatically log all incoming events
-objs = Object.entries(window.api.on)
+let objs = Object.entries(window.api.on)
 for (const cmd of objs) {
     cmd[1](info => {
+        Queue.add(new Event(cmd[0], info))
         logEvent(cmd[0], info)
     })
-}
-
-async function GetUser(user_id, normal) { // normal is true if it's a player, false if it's a random
-    normal = normal ?? false
-    user_id = idFromUsername(user_id) ?? user_id
-    let user = players[user_id] ?? other_players[user_id]
-    if (user != undefined) {
-        return user
-    } else {
-        console.log("grabbing new player!!")
-        user = (await window.api.api.GetUser(user_id)).data
-        let ret = new User(user_id, user, null, null, null, null)
-        if (normal) players[user.id] = ret
-        if (!normal) other_players[user.id] = ret
-        return ret
-    }
 }
 
 async function GetBeatmap(beatmap_id) {
@@ -323,54 +303,6 @@ function setResult(id, result) {
     } else {
         el.className = 'result-msg err'
         el.textContent = 'Error: ' + result.error
-    }
-}
-
-async function logEvent(name, data) {
-    let isRes = false;
-    const keep_room_id = ["RefereeInvited"]
-    if (data instanceof Promise) { // if it's a method we sent
-        data = await data
-        isRes = true;
-    }
-    console.log(name, data)
-    const log = document.getElementById('event-log')
-    const placeholder = log.querySelector('.event-placeholder')
-    if (placeholder) placeholder.remove()
-    const entry = document.createElement('div')
-    entry.className = 'event-entry'
-    const time = document.createElement('div');
-    time.textContent = name + ': [' + new Date().toLocaleTimeString() + ']'
-    if (isRes) {
-        time.textContent += data.success ? " Succeeded" : " Failed"
-        data = data.success ? data.data : data.error
-    } else {
-        if (!keep_room_id.includes(name)) delete data.room_id // dont need since this client only works 1 room at a time
-    }
-    const logData = document.createElement('div');
-    if (data == null) {data = ''}
-    if (typeof data == 'string') {
-        logData.textContent = data
-    } else {
-        for(const [key, value] of Object.entries(data)) {
-            const x = document.createElement('div');
-            x.textContent = key + ": " + (typeof value == 'string' ? value : JSON.stringify(value, null, ' '))
-            logData.append(x)
-        }
-    }
-    entry.append(time)
-    entry.append(logData)
-    log.prepend(entry)
-}
-
-
-function idFromUsername(username) {
-    let user = Object.keys(players).find(key => players[key].user.username == username)
-    if (user == undefined) user = Object.keys(other_players).find(key => other_players[key].username == username)
-    if (user != undefined) {
-        return user;
-    } else {
-        return null;
     }
 }
 
@@ -965,6 +897,8 @@ document.getElementById('make-room-btn').addEventListener('click', async () => {
         name: str('make-room-name')
     })
     if (result.success && result.data) {
+        room = new Room(result.data)
+        Queue = new EventQueue(room)
         showRoomActions(result.data.room_id, result.data.chat_channel_id, result.data.name, result.data.password)
         hideRoomCreation()
         connected = true
@@ -1106,17 +1040,6 @@ function commandHandler(message) {
 }
 
 // ── Event listeners ────────────────────────────────────────────────────────
-window.api.on.UserJoined(async info => {
-    let resolveFn;
-    const promise = new Promise(resolve => resolveFn = resolve);
-    addingUser.set(info.user_id, promise)
-    const user = await GetUser(info.user_id, true)
-    console.log(user.user.username, "has joined!!")
-    addPlayer(info.user_id, "idle", user.user.username, "none")
-    players[info.user_id].status = "idle"
-    players[info.user_id].team = "none"
-    resolveFn()
-})
 window.api.on.UserLeft(info => {
     removePlayer(info.user_id)
 })
