@@ -1,7 +1,7 @@
 // ── Theme Toggle ────────────────────────────────────────────────────────────
 
 import { User, Event, EventQueue, Room } from "./models.js"
-import { idFromUsername, osu, logEvent, MODS } from "./utils.js"
+import { idFromUsername, osu, logEvent, MODS, addSystemMsg } from "./utils.js"
 const themeToggle = document.getElementById('theme-toggle')
 
 function updateThemeIcon() {
@@ -375,22 +375,6 @@ function addChatMsg(msg, username, pfp) {
 
 }
 
-function addSystemMsg(msg) {
-    document.getElementById("no-messages")?.remove()
-    const template = document.getElementById("sys-message")
-    const clone = template.content.cloneNode(true);
-    
-    clone.querySelector('.sys-message').textContent = msg
-    
-    const chatbox = document.getElementById("chat-messages")
-    chatbox.appendChild(clone)
-
-    if (chatbox.scrollHeight - chatbox.scrollTop - chatbox.clientHeight < 50) {
-        chatbox.scrollTop = chatbox.scrollHeight;
-    }
-
-}
-
 function refreshPlaylistItems() {
     document.getElementById("playlist-items").innerHTML = ""
     for (const item of Object.values(playlistItems)) {
@@ -499,6 +483,8 @@ function removeAllScores() {
 }
 
 async function addScore(room_id, playlist_id) {
+    // this entire thing is kinda cooked
+    // TODO: decouple this and store the previous scores too
     removeAllScores()
     const head_to_head = document.getElementById('cur-match-type').textContent == "head_to_head"
     scoreMode(head_to_head);
@@ -876,30 +862,12 @@ function commandHandler(message) {
 }
 
 // ── Event listeners ────────────────────────────────────────────────────────
-window.api.on.CountdownStarted(info => {
-    //document.getElementById('cur-match-countdown').textContent = info.seconds
-})
-window.api.on.CountdownStopped(info => {
-    //document.getElementById('cur-match-countdown').textContent = "-"
-})
-window.api.on.MatchStarted(info => {
-    document.getElementById('cur-match-status').textContent = "Playing"
-})
-window.api.on.MatchAborted(info => {
-    document.getElementById('cur-match-status').textContent = "Aborted"
-})
 window.api.on.MatchCompleted(info => {
-    document.getElementById('cur-match-status').textContent = "Idle"
     addScore(currentRoomId, info.playlist_item_id)
 })
 
-window.api.on.RollCompleted(async info => {
-    let user = await room.GetUser(info.user_id)
-    addSystemMsg(`${user.user.username} rolled ${info.result}/${info.max}.`)
-})
-
 window.api.api.onChatMessage(async buffer => {
-    if (room.chat_channel_id == "") return;
+    if (!room?.chat_channel_id) return;
     const data = JSON.parse(buffer)
     if (data.event != "chat.message.new") {
         console.log(data)

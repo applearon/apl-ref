@@ -54,6 +54,23 @@ export async function logEvent(name, data) {
     log.prepend(entry)
 }
 
+export function addSystemMsg(msg) {
+    document.getElementById("no-messages")?.remove()
+    const template = document.getElementById("sys-message")
+    const clone = template.content.cloneNode(true);
+    
+    clone.querySelector('.sys-message').textContent = msg
+    
+    const chatbox = document.getElementById("chat-messages")
+    chatbox.appendChild(clone)
+
+    if (chatbox.scrollHeight - chatbox.scrollTop - chatbox.clientHeight < 50) {
+        chatbox.scrollTop = chatbox.scrollHeight;
+    }
+
+}
+
+
 let objs = Object.entries(window.api.send)
 let osu = {}
 for (const cmd of objs) {

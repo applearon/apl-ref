@@ -1,4 +1,4 @@
-import { idFromUsername, osu, GetBeatmap, MODS } from './utils.js'
+import { idFromUsername, osu, GetBeatmap, MODS, addSystemMsg } from './utils.js'
 
 export class User {
     constructor(id, user, team, mods, style, status) {
@@ -22,20 +22,29 @@ export class Room {
         for (const item of resp.playlist) {
             this.playlistItems[item.id] = item
         }
-        // TODO do GetUser-y stuff here
-        // i guess it's fine for each to have their own user list?
-        // ^ since they really shouldn't ever overlap (besides yourself)
         this.players = {}
         this.refs = {}
-        this.player_slots = resp.players // the ordering
+        this.player_slots = resp.players.map(x => x.user_id) // the ordering
         for (const ref of resp.referees) {
-            this.GetUser(ref.user_id).then((u) => {
-                this.refs[ref.user_id] = u
+            this.GetUser(ref.user_id).then(() => {
+                //this.refs[ref.user_id] = u
+            })
+        }
+        for (const p of resp.players) {
+            this.GetUser(p.user_id, true).then(() => {
+                this.players[p.user_id].team = p.team
+                this.players[p.user_id].mods = p.mods
+                this.players[p.user_id].status = p.status
+                this.players[p.user_id].style = p.style
+                this.players[p.user_id].mods = p.mods
             })
         }
         this.type = resp.state.type ?? "head_to_head"
         this.locked = resp.state.locked ?? false
+        
 
+        // "playing", "idle", etc
+        this.status = "Idle"
         // i really need to think of a better way to do this
         this.editing_playlist_item = 0;
     }
@@ -208,7 +217,8 @@ export class Room {
 
         // Players
         document.getElementById("player-list").innerHTML = ''
-        for (const player of Object.values(this.players)) {
+        for (const pid of this.player_slots) { // ordered properly
+            const player = this.players[pid]
             console.log("UI Updating", player)
             this.#addPlayer(player.id, player.status, player.user.username, player.team)
             const playerDiv = document.querySelector(`[data-user_id="${player.id}"]`)
@@ -235,6 +245,9 @@ export class Room {
             // (playlist_id, ruleset_id, beatmap_id, required_mods, allowed_mods, freestyle)
             this.#addPlaylistItem(playlist_item.id, playlist_item.ruleset_id, playlist_item.beatmap_id, playlist_item.required_mods, playlist_item.allowed_mods, playlist_item.freestyle)
         }
+
+        // Match Status
+        document.getElementById('cur-match-status').textContent = this.status
     }
 }
 
@@ -274,6 +287,7 @@ export class EventQueue {
             } break;
             case "UserLeft": {
                 delete this.room.players[data.user_id]
+                this.room.player_slots = this.room.player_slots.filter(x => x != data.user_id)
             } break;
             case "UserKicked": {
                 if (data.kicked_user_id == window.me.id) {
@@ -292,6 +306,7 @@ export class EventQueue {
 
                 }
                 delete this.room.players[data.user_id]
+                this.room.player_slots = this.room.player_slots.filter(x => x != data.user_id)
             } break;
             case "RoomSettingsChanged": {
                 this.room.name = data.name
@@ -333,6 +348,26 @@ export class EventQueue {
             } break;
             case "UserTeamChanged": {
                 this.room.players[data.user_id].team = data.team
+            } break;
+            case "CountdownStarted":
+            case "CountdownStopped":
+                break;
+            case "MatchStarted": {
+                this.room.status = "Playing"
+            } break;
+            case "MatchAborted": {
+                this.room.status = "Aborted"
+            } break;
+            case "MatchCompleted": {
+                this.room.status = "Idle"
+            } break;
+            case "RollCompleted": {
+                // Again i don't love doing UI changes here but
+                // chat stuff is ephemeral rn anyways so
+                // TODO: store chat messages somewhere and also figure out the
+                // flow to get the previous messages
+                let user = await this.room.GetUser(data.user_id)
+                addSystemMsg(`${user.user.username} rolled ${data.result}/${data.max}`)
             } break;
             }
             this.room.updateUI()
