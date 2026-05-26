@@ -7,6 +7,16 @@ export function idFromUsername(username, arr, refs) {
         return null;
     }
 }
+
+export async function GetBeatmap(beatmap_id) {
+    if (window.beatmaps[beatmap_id]) return window.beatmaps[beatmap_id]
+    let map = await window.api.api.GetBeatmap(beatmap_id)
+    console.log("grabbing beatmap data")
+    window.beatmaps[beatmap_id] = map.data
+    return map.data
+}
+
+
 export async function logEvent(name, data) {
     let isRes = false;
     const keep_room_id = ["RefereeInvited"]
@@ -53,5 +63,9 @@ for (const cmd of objs) {
         return res
     }
 }
+let MODS;
+fetch('mods.json').then(mod_res => {
+    mod_res.json().then(mods => MODS = mods)
+})
 
-export { osu }
+export { osu, MODS }

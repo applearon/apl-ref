@@ -1,7 +1,7 @@
 // ── Theme Toggle ────────────────────────────────────────────────────────────
 
 import { User, Event, EventQueue, Room } from "./models.js"
-import { idFromUsername, osu, logEvent } from "./utils.js"
+import { idFromUsername, osu, logEvent, MODS } from "./utils.js"
 const themeToggle = document.getElementById('theme-toggle')
 
 function updateThemeIcon() {
@@ -23,10 +23,6 @@ if (savedTheme === 'light') {
     document.documentElement.classList.remove('dark')
 }
 updateThemeIcon()
-let MODS;
-fetch('mods.json').then(mod_res => {
-    mod_res.json().then(mods => MODS = mods)
-})
 
 document.title = document.title + ": " + window.version
 
@@ -35,14 +31,13 @@ document.title = document.title + ": " + window.version
 let players = {};
 let other_players = {}; // removes calling too much, should be partially(?) replaced with referee list
 let playlistItems = {};
-let beatmaps = {};
-let chat_channel_id = ""
+window.beatmaps = {}; // global cause like
+// i cant imagine that will cause problems?
 let connected = false;
 
 let Queue;
 let room;
 
-let editing_playlist_item = 0;
 let password = ""
 let room_name = ""
 
@@ -54,6 +49,7 @@ const addingUser = new Map();
 let me;
 window.api.api.GetSelf().then (x => {
     me = x.data
+    window.me = x.data
     other_players[x.data.id] = new User(x.data.id, x.data)
 })
 
@@ -62,7 +58,7 @@ async function ircStyleUsername(str) { // old mode is #14573534 for user id, and
     if (str[0] == '#') {
         return parseInt(str.substring(1))
     }
-    return (await GetUser(str)).id
+    return (await room.GetUser(str, true)).id
 }
 
 // TODO most of these don't update the UI
@@ -115,7 +111,7 @@ async function cmdRunner(cmd, ...args) {
             players = {}
             playlistItems = {}
             refreshPlaylistItems()
-            chat_channel_id = ""
+            //chat_channel_id = ""
     
             document.getElementById("chat-messages").innerHTML = '<div id="no-messages" class="text-gray-500 dark:text-gray-400 text-sm italic">No messages yet...</div>'
         },
@@ -286,14 +282,6 @@ for (const cmd of objs) {
     })
 }
 
-async function GetBeatmap(beatmap_id) {
-    if (beatmaps[beatmap_id]) return beatmaps[beatmap_id]
-    let map = await window.api.api.GetBeatmap(beatmap_id)
-    console.log("grabbing beatmap data")
-    beatmaps[beatmap_id] = map.data
-    return map.data
-}
-
 function setResult(id, result) {
     const el = document.getElementById(id)
     if (!el) return
@@ -363,115 +351,6 @@ function debugMode() {
     showRoomCreation()
     const ping = document.getElementById("debug-menu")
     ping.classList.add('visible')
-}
-function addPlayer(user_id, player_status, name, team) {
-    // "idle", "ready", "playing", "finished_play", "spectating"
-    const team_class = "team-" + team.toLowerCase() // only red and blue or none
-    const template = document.getElementById("player-item")
-    const clone = template.content.cloneNode(true);
-    clone.querySelector(".player-status").textContent = player_status
-    clone.querySelector(".player-name").textContent = name
-    const teamSpan = clone.querySelector(".player-team")
-    teamSpan.classList.add(team_class)
-    clone.getElementById("player-mods").textContent = "N/A"
-    teamSpan.addEventListener("click", async () => {
-        // TODO change to if it's head-to-head
-        //if(teamSpan.classList.contains("team-none")) return;
-        //^ i think it'll just fail?? maybe check specifically if the mode is head-to-head
-        //cant do this cause something something they start out as grey
-        const result = await osu.MoveUser(currentRoomId, {
-            user_id,
-            team: teamSpan.classList.contains("team-red") ? "blue" : "red"
-        })
-        console.log(result)
-    })
-    teamSpan.style.cursor = 'pointer';
-
-    clone.querySelector(".player-item").dataset.user_id =user_id
-    
-
-    const kickBtn = clone.querySelector(".kick-btn")
-    kickBtn.addEventListener("click", async () => {
-        const confirmed = await confirm("Kick Player", "Are you sure you want to kick " + name + "?")
-        if (confirmed) {
-            await osu.KickPlayer(currentRoomId, user_id)
-        }
-    })
-    
-    document.getElementById("player-list").appendChild(clone)
-}
-
-async function addPlaylistItem(playlist_id, ruleset_id, beatmap_id, required_mods, allowed_mods, freestyle, was_played) {
-    const modes = ["osu!", "taiko", "catch", "mania"]
-    const template = document.getElementById("playlist-item")
-    const textTemplate = document.getElementById("playlist-text")
-    const beatmap_text = textTemplate.content.cloneNode(true);
-    const clone = template.content.cloneNode(true);
-    beatmap_text.querySelector(".label").textContent = "Beatmap ID"
-    beatmap_text.querySelector(".value").textContent = beatmap_id
-    clone.querySelector(".playlist-item").appendChild(beatmap_text);
-
-    const req_mods_text = textTemplate.content.cloneNode(true);
-    req_mods_text.querySelector(".label").textContent = "Required Mods"
-    let req_mod_readable = required_mods.map(item => item.acronym).join(" ");
-    req_mods_text.querySelector(".value").textContent = req_mod_readable
-    clone.querySelector(".playlist-item").appendChild(req_mods_text);
-
-    const alw_mods_text = textTemplate.content.cloneNode(true);
-    alw_mods_text.querySelector(".label").textContent = "Allowed Mods"
-    let alw_mod_readable = allowed_mods.map(item => item.acronym).join(" ");
-    alw_mods_text.querySelector(".value").textContent = alw_mod_readable
-    clone.querySelector(".playlist-item").appendChild(alw_mods_text);
-
-    const freestyle_text = textTemplate.content.cloneNode(true);
-    freestyle_text.querySelector(".label").textContent = "Freestyle"
-    freestyle_text.querySelector(".value").textContent = freestyle.toString()
-    clone.querySelector(".playlist-item").appendChild(freestyle_text);
-
-    clone.querySelector(".playlist-item-ruleset").textContent = modes[ruleset_id]
-
-    clone.querySelector(".playlist-item").classList.add(playlist_id)
-
-
-    const edit_btn = clone.querySelector(".edit-playlist-btn")
-    edit_btn.addEventListener('click', () => {
-        console.log("hi chat")
-        const modes = ["osu!", "taiko", "catch", "mania"]
-      
-        const textElements = edit_btn.parentNode.parentNode.parentNode.querySelectorAll(".playlist-item-text")
-        let beatmapId = ""
-        let requiredMods = ""
-        let allowedMods = ""
-        let freestyle = false
-        for (const el of textElements) {
-            const label = el.querySelector(".label").textContent
-            const value = el.querySelector(".value").textContent
-            if (label === "Beatmap ID") beatmapId = value
-            else if (label === "Required Mods") requiredMods = value
-            else if (label === "Allowed Mods") allowedMods = value
-            else if (label === "Freestyle") freestyle = value === "true"
-        }
-      
-        const rulesetText = edit_btn.parentNode.parentNode.parentNode.querySelector(".playlist-item-ruleset").textContent
-        const rulesetId = modes.indexOf(rulesetText)
-      
-        document.getElementById("popup-edit-beatmap-id").value = beatmapId
-        document.getElementById("popup-edit-ruleset-id").value = rulesetId >= 0 ? rulesetId : ""
-        document.getElementById("popup-edit-required-mods").value = requiredMods
-        document.getElementById("popup-edit-allowed-mods").value = allowedMods
-        document.getElementById("popup-edit-freestyle").checked = freestyle
-        editing_playlist_item = playlist_id
-        editPlaylistModal.classList.add('visible')
-    })
-
-    document.getElementById("playlist-items").appendChild(clone)
-    const beatmap = await GetBeatmap(beatmap_id)
-    document.querySelector(`[class~="${playlist_id}"]`).querySelector('.playlist-item-id').textContent = beatmap.beatmapset.title + ` [${beatmap.version}]`
-}
-
-function removePlayer(user_id) {
-    document.querySelector(`[data-user_id="${user_id}"]`).remove()
-    return delete players[user_id]
 }
 
 function removePlaylistItem(playlist_id) {
@@ -549,57 +428,19 @@ function refreshPlaylistItems() {
 
 
 async function addVerboseMods(user_id, mods) { // might work, **definitely** needs testing
-    // TODO add the user's name to the UI & make it pretty
-    let user = await GetUser(user_id)
-    const verboseMods = document.getElementById("mods-verbose-container");
-    const cur = verboseMods.querySelector(`[data-user_id="${user_id}"]`)
-    const template = document.getElementById("player-mods-verbose");
-    const mod_template = document.getElementById("player-mod-item")
-    const clone = template.content.cloneNode(true);
-    const mod_div = cur != null ? cur : clone.querySelector(".mods-container")
-    const mod_list = mod_div.querySelector(".mods-list")
-    let empty = true
-    mod_list.innerHTML = ""
-    for (const mod of mods) { // TODO split it again and such
-        const mod_clone = mod_template.content.cloneNode(true);
-        const settings_div = mod_clone.querySelector(".mod-item")
-        let user_div = mod_div.querySelector(".mods-user")
-        let mod_name = settings_div.querySelector(".mod-item-name")
-        let mod_settings = settings_div.querySelector(".mod-item-settings")
-        const mod_info = MODS[0].Mods.find(x => x.Acronym == mod.acronym)
-        // settings is in the form of {option: number|string|boolean} im pretty sure
-        let settings_text = ""
-        for (const setting of Object.entries(mod.settings)) {
-            settings_text += `${setting[0]}:${setting[1]}, `
-        }
-        const undefault_settings = mod.settings != null && Object.entries(mod.settings).length != 0
-        if (undefault_settings) {
-            empty = false
-            user_div.textContent = user != undefined ? user.user.username : user_id
-            mod_name.textContent = mod_info.Name
-            mod_settings.textContent = settings_text
-        }
-        if (undefault_settings) mod_list.appendChild(mod_clone)
-    }
-    if (empty) {
-        if (cur != null) cur.remove() // delete it if previously modded
-        return;
-    }
-    mod_div.dataset.user_id = user_id
-    if (cur == null) verboseMods.appendChild(clone)
 }
 
 
 // Timer
 function startTimer(seconds) {
     const informTimes = [30, 15, 10, 5]
-    window.api.api.SendMessage(chat_channel_id, `Started a countdown for ${seconds} seconds`)
+    window.api.api.SendMessage(room.chat_channel_id, `Started a countdown for ${seconds} seconds`)
     let elapsed = 0
     countdown_id = setInterval(() => {
         //console.log(elapsed, seconds)
         if (elapsed >= seconds) {
             clearInterval(countdown_id)
-            window.api.api.SendMessage(chat_channel_id, "The countdown has ended.")
+            window.api.api.SendMessage(room.chat_channel_id, "The countdown has ended.")
             countdown_id = null
             return;
         }
@@ -607,7 +448,7 @@ function startTimer(seconds) {
             let msg = "The countdown has "
             msg += (seconds-elapsed) >= 60 ? `${Math.floor((seconds - elapsed) / 60)} minutes ` : ""
             msg += (seconds - elapsed) % 60 != 0 ? `${(seconds - elapsed) % 60} seconds remaining.` : "remaining."
-            window.api.api.SendMessage(chat_channel_id, msg)
+            window.api.api.SendMessage(room.chat_channel_id, msg)
         }
         elapsed += 1;
     }, 1000)
@@ -760,7 +601,7 @@ document.getElementById('edit-playlist-cancel').addEventListener('click', () => 
 
 document.getElementById('edit-playlist-remove').addEventListener('click', async () => {
     await osu.RemovePlaylistItem(currentRoomId, {
-        playlist_item_id: editing_playlist_item
+        playlist_item_id: room.editing_playlist_item
     })
     editPlaylistModal.classList.remove('visible')
 })
@@ -782,7 +623,7 @@ document.getElementById('edit-playlist-confirm').addEventListener('click', async
     }
 
     const result = await osu.EditPlaylistItem(currentRoomId, {
-        playlist_item_id: editing_playlist_item,
+        playlist_item_id: room.editing_playlist_item,
         beatmap_id,
         ruleset_id,
         required_mods,
@@ -902,12 +743,7 @@ document.getElementById('make-room-btn').addEventListener('click', async () => {
         showRoomActions(result.data.room_id, result.data.chat_channel_id, result.data.name, result.data.password)
         hideRoomCreation()
         connected = true
-        chat_channel_id = result.data.chat_channel_id;
-        const playlist = result.data.playlist[0]
-        addPlaylistItem(playlist.id, playlist.ruleset_id, playlist.beatmap_id, playlist.required_mods, playlist.allowed_mods, playlist.freestyle, playlist.was_played)
-        playlistItems[playlist.id] = playlist
-
-        document.getElementById('cur-match-type').textContent = result.data.state.type
+        room.updateUI()
     }
 })
 
@@ -918,15 +754,15 @@ document.getElementById('join-room-btn').addEventListener('click', async () => {
         showRoomActions(roomId, result.data.chat_channel_id, result.data.name, result.data.password)
         hideRoomCreation()
         connected = true
-        chat_channel_id = result.data.chat_channel_id;
+        //chat_channel_id = result.data.chat_channel_id;
         const playlists = result.data.playlist
         for (const playlist of playlists) {
-            addPlaylistItem(playlist.id, playlist.ruleset_id, playlist.beatmap_id, playlist.required_mods, playlist.allowed_mods, playlist.freestyle, playlist.was_played)
+            //addPlaylistItem(playlist.id, playlist.ruleset_id, playlist.beatmap_id, playlist.required_mods, playlist.allowed_mods, playlist.freestyle, playlist.was_played)
             playlistItems[playlist.id] = playlist
         }
         for (const p of result.data.players) {
-            let user = await GetUser(p.user_id)
-            addPlayer(p.user_id, p.status, user.user.username, p.team ?? "none")
+            //let user = await GetUser(p.user_id)
+            //addPlayer(p.user_id, p.status, user.user.username, p.team ?? "none")
         }
 
         document.getElementById('cur-match-type').textContent = result.data.state.type
@@ -984,7 +820,7 @@ document.getElementById('close-room-btn').addEventListener('click', async () => 
         players = {}
         playlistItems = {}
         refreshPlaylistItems()
-        chat_channel_id = ""
+        //chat_channel_id = ""
 
         document.getElementById("chat-messages").innerHTML = '<div id="no-messages" class="text-gray-500 dark:text-gray-400 text-sm italic">No messages yet...</div>'
     } else {
@@ -1000,8 +836,8 @@ document.getElementById('chat-send-btn').addEventListener('click', async () => {
         document.getElementById('chat-input').value = ''
         return;
     }
-    if (chat_channel_id != "" && str('chat-input').trim()) {
-        window.api.api.SendMessage(chat_channel_id, str('chat-input'))
+    if (room.chat_channel_id != "" && str('chat-input').trim()) {
+        window.api.api.SendMessage(room.chat_channel_id, str('chat-input'))
         document.getElementById('chat-input').value = ''
     } else {
         console.log("not sending msg")
@@ -1040,107 +876,6 @@ function commandHandler(message) {
 }
 
 // ── Event listeners ────────────────────────────────────────────────────────
-window.api.on.UserLeft(info => {
-    removePlayer(info.user_id)
-})
-window.api.on.UserKicked(info => {
-    console.log(me)
-    console.log(me.id)
-    if (info.kicked_user_id == me.id) {
-        hideRoomActions()
-        showRoomCreation()
-        connected = false
-        players = {}
-        playlistItems = {}
-        refreshPlaylistItems()
-        chat_channel_id = ""
-
-        document.getElementById("chat-messages").innerHTML = '<div id="no-messages" class="text-gray-500 dark:text-gray-400 text-sm italic">No messages yet...</div>'
-    }
-    removePlayer(info.kicked_user_id)
-})
-window.api.on.RoomSettingsChanged(info => {
-    room_name = info.name
-    password = info.password
-    let match_type = info.type
-    document.getElementById('room-name').textContent = room_name
-    document.getElementById('cur-match-type').textContent = match_type
-    document.getElementById('settings-name').value = room_name
-    document.getElementById('settings-password').value = password
-    document.getElementsByName("match_type")[0].checked = match_type == "head_to_head"
-    document.getElementsByName("match_type")[1].checked = match_type != "head_to_head"
-
-})
-
-window.api.on.MatchStateChanged(info => {
-    const locked = info.state.locked
-    const type = info.state.type
-    document.getElementById('toggle-lock-btn').textContent = locked ? "Locked" : "Unlocked"
-    if (type) document.getElementById('cur-match-type').textContent = type
-    console.log("wa",type)
-})
-
-window.api.on.PlaylistItemAdded(info => {
-    const data = info.playlist_item
-    if (data.was_played) {
-        removePlaylistItem(data.id)
-        delete playlistItems[data.id]
-    } else {
-        addPlaylistItem(data.id, data.ruleset_id, data.beatmap_id, data.required_mods, data.allowed_mods, data.freestyle, data.was_played)
-        playlistItems[data.id] =data
-    }
-})
-window.api.on.PlaylistItemChanged(info => {
-    const data = info.playlist_item
-    const playlist_id = data.id
-    //const playlist = document.querySelector(`[class~="${playlist_id}"]`)
-    if (data.was_played) {
-        removePlaylistItem(data.id)
-        delete playlistItems[data.id]
-    } else {
-        Object.keys(data).forEach(key => {
-            playlistItems[playlist_id][key] = data[key]
-        })
-    }
-    refreshPlaylistItems()
-})
-window.api.on.PlaylistItemRemoved(info => {
-    delete playlistItems[info.playlist_item_id]
-    refreshPlaylistItems()
-})
-window.api.on.UserStatusChanged(info => {
-    const user_id = info.user_id
-    const playerDiv = document.querySelector(`[data-user_id="${user_id}"]`)
-    playerDiv.querySelector(".player-status").textContent = info.status
-    players[user_id].status = info.status
-})
-
-window.api.on.UserModsChanged(info => { // TODO: check if when playlistItem changes/removes if user mods get reset
-    const mods = info.mods
-    const user_id = info.user_id
-    const playerDiv = document.querySelector(`[data-user_id="${user_id}"]`)
-    let mod_str = mods.map(item => item.acronym).join(" ");
-    playerDiv.querySelector(".player-mods").textContent = mod_str ? mod_str : "N/A"
-    addVerboseMods(user_id, mods)
-    players[user_id].mods = mods
-})
-
-window.api.on.UserStyleChanged(info => {
-    // idk man if your tourmament has freestyle you have bigger problems
-    // TODO fix this i guess
-})
-
-window.api.on.UserTeamChanged(async info => {
-    const user_id = info.user_id; // TODO this breaks if the JoinUser isn't done yet
-    if (addingUser.has(user_id)) {
-        await addingUser.get(user_id)
-    }
-    const user_UI = document.querySelector(`[data-user_id="${user_id}"]`).querySelector(".player-team")
-    console.log(user_id)
-    console.log(user_UI)
-    user_UI.classList.remove("team-none", "team-red", "team-blue")
-    user_UI.classList.add("team-" + info.team) // also TODO am i changing the player's team in the array
-})
 window.api.on.CountdownStarted(info => {
     //document.getElementById('cur-match-countdown').textContent = info.seconds
 })
@@ -1159,12 +894,12 @@ window.api.on.MatchCompleted(info => {
 })
 
 window.api.on.RollCompleted(async info => {
-    let user = await GetUser(info.user_id)
+    let user = await room.GetUser(info.user_id)
     addSystemMsg(`${user.user.username} rolled ${info.result}/${info.max}.`)
 })
 
 window.api.api.onChatMessage(async buffer => {
-    if (chat_channel_id == "") return;
+    if (room.chat_channel_id == "") return;
     const data = JSON.parse(buffer)
     if (data.event != "chat.message.new") {
         console.log(data)
@@ -1172,10 +907,10 @@ window.api.api.onChatMessage(async buffer => {
     };
     const messages = data.data.messages
     for (const msg of messages) {
-        if (msg.channel_id == chat_channel_id) {
+        if (msg.channel_id == room.chat_channel_id) {
             //console.log("ohmygah")
             console.log(msg.sender_id, msg.content)
-            let user = (await GetUser(msg.sender_id)).user
+            let user = (await room.GetUser(msg.sender_id)).user
             addChatMsg(msg.content, user.username, user.avatar_url)
             //if (!commandHandler(user.username, msg.content)) addChatMsg(msg.content, user.username, user.avatar_url)
         }
