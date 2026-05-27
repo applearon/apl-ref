@@ -70,6 +70,14 @@ export function addSystemMsg(msg) {
 
 }
 
+export function showToast(message, duration = 3000) {
+    const toast = document.getElementById('toast')
+    toast.textContent = message
+    toast.classList.remove('hidden')
+    setTimeout(() => toast.classList.add('hidden'), duration)
+}
+
+
 
 let objs = Object.entries(window.api.send)
 let osu = {}

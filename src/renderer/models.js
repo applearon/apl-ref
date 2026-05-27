@@ -1,4 +1,15 @@
-import { idFromUsername, osu, GetBeatmap, MODS, addSystemMsg } from './utils.js'
+import { idFromUsername, osu, GetBeatmap, MODS, addSystemMsg, showToast } from './utils.js'
+
+function hideRoomActions() {
+    document.getElementById('room-actions').classList.add('hidden')
+    document.getElementById('room-badge').classList.remove('visible')
+    document.getElementById('room-chat-badge').classList.remove('visible')
+    document.getElementById('navbar-room-controls').classList.remove('visible')
+
+    document.getElementById('add-referee').classList.remove('visible')
+    document.getElementById('room-chat-id').textContent = ''
+    document.getElementById('room-name').textContent = "APL Ref Client"
+}
 
 export class User {
     constructor(id, user, team, mods, style, status) {
@@ -47,6 +58,7 @@ export class Room {
         this.status = "Idle"
         // i really need to think of a better way to do this
         this.editing_playlist_item = 0;
+        this.#showRoomActions()
     }
     async GetUser(user_id, normal) {
         normal = normal ?? false
@@ -65,6 +77,24 @@ export class Room {
         }
     }
 
+    #showRoomActions() {
+        document.getElementById('room-actions').classList.remove('hidden')
+        document.getElementById('room-badge').classList.add('visible')
+        document.getElementById('room-chat-badge').classList.add('visible')
+        document.getElementById('navbar-room-controls').classList.add('visible')
+
+        document.getElementById('add-referee').classList.add('visible')
+        document.getElementById('room-badge').addEventListener('click', () => {
+            try {
+                navigator.clipboard.writeText("https://osu.ppy.sh/multiplayer/rooms/" + this.id)
+                showToast("Copied to clipboard!")
+            } catch {
+                showToast("Failed to copy. idk what happened")
+            }
+        })
+        document.getElementById('room-chat-id').textContent = this.chat_channel_id
+        document.getElementById('room-name').textContent = this.name
+    }
 
     // UI Helpers and stuff
     #addPlayer(user_id, player_status, name, team) {
@@ -262,12 +292,21 @@ export class Room {
         // Playlist Items
         document.getElementById("playlist-items").innerHTML = ""
         for (const playlist_item of Object.values(this.playlistItems)) {
-            // (playlist_id, ruleset_id, beatmap_id, required_mods, allowed_mods, freestyle)
             this.#addPlaylistItem(playlist_item.id, playlist_item.ruleset_id, playlist_item.beatmap_id, playlist_item.required_mods, playlist_item.allowed_mods, playlist_item.freestyle)
         }
 
         // Match Status
         document.getElementById('cur-match-status').textContent = this.status
+    }
+    close() {
+        document.getElementById("playlist-items").innerHTML = ""
+        const req_mods_div = document.getElementById('req-verbose-mods')
+        req_mods_div.querySelector(".mods-list").innerHTML = ""
+        document.getElementById("player-list").innerHTML = ''
+        hideRoomActions()
+        document.getElementById('room-setup').classList.remove('hidden')
+
+        document.getElementById("chat-messages").innerHTML = '<div id="no-messages" class="text-gray-500 dark:text-gray-400 text-sm italic">No messages yet...</div>'
     }
 }
 
@@ -392,7 +431,6 @@ export class EventQueue {
             }
             this.room.updateUI()
         }
-
         this.processing = false;
     }
 }

@@ -26,31 +26,16 @@ updateThemeIcon()
 
 document.title = document.title + ": " + window.version
 
-// Stored Data TODO: make this into a proper class
-//             ^ blocking step for supporting multiple rooms
-let players = {};
-let other_players = {}; // removes calling too much, should be partially(?) replaced with referee list
-let playlistItems = {};
 window.beatmaps = {}; // global cause like
 // i cant imagine that will cause problems?
-let connected = false;
 
 let Queue;
 let room;
 
-let password = ""
-let room_name = ""
-
 let countdown_id;
-// TODO this is so cursed and i have to like rewrite a significant portion of this
-// but it works for now so whatever
-const addingUser = new Map();
 
-let me;
 window.api.api.GetSelf().then (x => {
-    me = x.data
     window.me = x.data
-    other_players[x.data.id] = new User(x.data.id, x.data)
 })
 
 
@@ -104,12 +89,9 @@ async function cmdRunner(room_id, cmd, ...args) {
         "removeref": async () => {return osu.RemoveReferee(room_id, await ircStyleUsername(args[0]))},
         "listrefs": () => {return addSystemMsg("Unimplemented")}, // need custom logic
         "close": () => {
-            osu.CloseRoom(room_id)
-            hideRoomActions() // copied around, TODO generalize
-            showRoomCreation()
-            connected = false
-            players = {}
-            playlistItems = {}
+            osu.CloseRoom(room.id)
+            room.close()
+            room = null
     
             document.getElementById("chat-messages").innerHTML = '<div id="no-messages" class="text-gray-500 dark:text-gray-400 text-sm italic">No messages yet...</div>'
         },
@@ -204,8 +186,8 @@ function handleModChange(args) {
 // ── UI helpers ──────────────────────────────────────────────────────────────
 
 function showSettingsDropdown() {
-    document.getElementById('settings-name').value = room_name
-    document.getElementById('settings-password').value = password
+    document.getElementById('settings-name').value = room.name
+    document.getElementById('settings-password').value = room.password
     document.getElementById('settings-dropdown').classList.add('visible')
 }
 
@@ -289,61 +271,10 @@ function hideRoomCreation() {
     document.getElementById('room-setup').classList.add('hidden')
 }
 
-function showRoomCreation() {
+function debugMode() { // this is kinda useless now but wtvs
     document.getElementById('room-setup').classList.remove('hidden')
-}
-
-
-function showRoomActions(roomId, channelId, name, rm_password) {
-    password = rm_password;
-    room_name = name;
-    document.getElementById('room-actions').classList.remove('hidden')
-    document.getElementById('room-badge').classList.add('visible')
-    document.getElementById('room-chat-badge').classList.add('visible')
-    document.getElementById('navbar-room-controls').classList.add('visible')
-
-    document.getElementById('add-referee').classList.add('visible')
-    document.getElementById('room-badge').addEventListener('click', () => {
-        try {
-            navigator.clipboard.writeText("https://osu.ppy.sh/multiplayer/rooms/" + roomId)
-            showToast("Copied to clipboard!")
-        } catch {
-            showToast("Failed to copy. idk what happened")
-        }
-    })
-    document.getElementById('room-chat-id').textContent = channelId
-    document.getElementById('room-name').textContent = name
-
-}
-
-function hideRoomActions() {
-    document.getElementById('room-actions').classList.add('hidden')
-    document.getElementById('room-badge').classList.remove('visible')
-    document.getElementById('room-chat-badge').classList.remove('visible')
-    document.getElementById('navbar-room-controls').classList.remove('visible')
-
-    document.getElementById('add-referee').classList.remove('visible')
-    document.getElementById('room-chat-id').textContent = ''
-    document.getElementById('room-name').textContent = "APL Ref Client"
-}
-
-function showToast(message, duration = 3000) {
-    const toast = document.getElementById('toast')
-    toast.textContent = message
-    toast.classList.remove('hidden')
-    setTimeout(() => toast.classList.add('hidden'), duration)
-}
-
-
-function debugMode() {
-    showRoomActions()
-    showRoomCreation()
     const ping = document.getElementById("debug-menu")
     ping.classList.add('visible')
-}
-
-function removePlaylistItem(playlist_id) {
-    document.querySelector(`[class~="${playlist_id}"]`).remove()
 }
 
 function addChatMsg(msg, username, pfp) {
@@ -675,9 +606,7 @@ document.getElementById('make-room-btn').addEventListener('click', async () => {
     if (result.success && result.data) {
         room = new Room(result.data)
         Queue = new EventQueue(room)
-        showRoomActions(result.data.room_id, result.data.chat_channel_id, result.data.name, result.data.password)
         hideRoomCreation()
-        connected = true
         room.updateUI()
     }
 })
@@ -686,20 +615,10 @@ document.getElementById('join-room-btn').addEventListener('click', async () => {
     const roomId = int('join-room-id')
     const result = await osu.JoinRoom(roomId)
     if (result.success) {
-        showRoomActions(roomId, result.data.chat_channel_id, result.data.name, result.data.password)
+        room = new Room(result.data)
+        Queue = new EventQueue(room)
         hideRoomCreation()
-        connected = true
-        const playlists = result.data.playlist
-        for (const playlist of playlists) {
-            //addPlaylistItem(playlist.id, playlist.ruleset_id, playlist.beatmap_id, playlist.required_mods, playlist.allowed_mods, playlist.freestyle, playlist.was_played)
-            playlistItems[playlist.id] = playlist
-        }
-        for (const p of result.data.players) {
-            //let user = await GetUser(p.user_id)
-            //addPlayer(p.user_id, p.status, user.user.username, p.team ?? "none")
-        }
-
-        document.getElementById('cur-match-type').textContent = result.data.state.type
+        room.updateUI()
     }
 })
 
@@ -748,13 +667,7 @@ document.getElementById('close-room-btn').addEventListener('click', async () => 
     if (!ok) return
     const result = await osu.CloseRoom(room.id)
     if (result.success) {
-        hideRoomActions() // copied around, TODO generalize
-        showRoomCreation()
-        connected = false
-        players = {}
-        playlistItems = {}
-
-        document.getElementById("chat-messages").innerHTML = '<div id="no-messages" class="text-gray-500 dark:text-gray-400 text-sm italic">No messages yet...</div>'
+        room.close()
     } else {
         console.log("How the hell")
     }
@@ -833,9 +746,6 @@ window.api.api.onChatMessage(async buffer => {
 
 // just for personal use of testing
 window.osu = osu
-window.players = () => {return players}
-window.other_players = () => {return other_players}
 window.debugMode = () => debugMode()
-window.playlistItems = () => {return playlistItems}
 window.ircStyleUsername = (str) => {return ircStyleUsername(str)}
 window.MODS = () => {return MODS};
