@@ -57,9 +57,10 @@ export class Room {
         } else {
             console.log("grabbing new player!!", user_id, normal)
             user = (await window.api.api.GetUser(user_id)).data
-            let ret = new User(user_id, user, null, [], null, null)
+            let ret = new User(user.id, user, null, [], null, null)
             if (normal) this.players[user.id] = ret
             if (!normal) this.refs[user.id] = ret
+            console.log(ret)
             return ret
         }
     }
@@ -194,8 +195,11 @@ export class Room {
             // settings is in the form of {option: number|string|boolean} im pretty sure
             let settings_text = ""
             for (const setting of Object.entries(mod.settings)) {
-                settings_text += `${setting[0]}:${setting[1]}, `
+                // MODS()[0].Mods.find(x => x.Acronym == "DA").Settings.find(x => x.Name == "circle_size").Label
+                let label = mod_info.Settings.find(x => x.Name == setting[0]).Label;
+                settings_text.push(`${label}:${setting[1]}`)
             }
+            settings_text = settings_text.join(", ")
             const undefault_settings = mod.settings != null && Object.entries(mod.settings).length != 0
             if (undefault_settings) {
                 empty = false
@@ -211,6 +215,35 @@ export class Room {
         }
         mod_div.dataset.user_id = user_id
         if (cur == null) verboseMods.appendChild(clone)
+    }
+
+    #addReqVerbose() {
+        let cur = Object.values(this.playlistItems).filter(y => y.order == 0)[0];
+        // TODO: this is copy pasted from addVerboseMods
+        const req_mods_div = document.getElementById('req-verbose-mods')
+        const mod_list = req_mods_div.querySelector(".mods-list")
+        const mod_template = document.getElementById("player-mod-item")
+        mod_list.innerHTML = ""
+        for (const mod of cur.required_mods) {
+            const mod_clone = mod_template.content.cloneNode(true);
+            const settings_div = mod_clone.querySelector(".mod-item")
+            let mod_name = settings_div.querySelector(".mod-item-name")
+            let mod_settings = settings_div.querySelector(".mod-item-settings")
+            const mod_info = MODS[0].Mods.find(x => x.Acronym == mod.acronym)
+            // settings is in the form of {option: number|string|boolean} im pretty sure
+            let settings_text = []
+            for (const setting of Object.entries(mod.settings)) {
+                const label = mod_info.Settings.find(x => x.Name == setting[0]).Label;
+                settings_text.push(`${label}:${setting[1]}`)
+            }
+            settings_text = settings_text.join(", ")
+            const undefault_settings = mod.settings != null && Object.entries(mod.settings).length != 0
+            if (undefault_settings) {
+                mod_name.textContent = mod_info.Name
+                mod_settings.textContent = settings_text
+            }
+            if (undefault_settings) mod_list.appendChild(mod_clone)
+        }
     }
 
     updateUI() {
@@ -236,6 +269,9 @@ export class Room {
         document.getElementsByName("match_type")[0].checked = this.type == "head_to_head"
         document.getElementsByName("match_type")[1].checked = this.type != "head_to_head"
         
+        // Required Mods
+        this.#addReqVerbose()
+
         // Match State
         document.getElementById('toggle-lock-btn').textContent = this.locked ? "Locked" : "Unlocked"
 

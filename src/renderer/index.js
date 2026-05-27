@@ -62,19 +62,19 @@ async function ircStyleUsername(str) { // old mode is #14573534 for user id, and
 }
 
 // TODO most of these don't update the UI
-async function cmdRunner(cmd, ...args) {
+async function cmdRunner(room_id, cmd, ...args) {
     const map = { 
-        "name": () => {return osu.ChangeRoomSettings(currentRoomId, {name: args.join(' ')})},
-        "invite": async () => {return osu.InvitePlayer(currentRoomId, await ircStyleUsername(args[0]))},
-        "lock": () => {return osu.SetLockState(currentRoomId, {locked: true})},
-        "unlock": () => {return osu.SetLockState(currentRoomId, {locked: false})},
-        "set": () => {return osu.ChangeRoomSettings(currentRoomId, {type: args[0] == 0 ? "head_to_head" : "team_versus"})},
-        "start": () => {return osu.StartMatch(currentRoomId, {countdown: parseInt(args[0])})},
-        "abort": () => {return osu.AbortMatch(currentRoomId)},
-        "team": async () => {return osu.MoveUser(currentRoomId, {user_id: await ircStyleUsername(args[0]), team: args[1]})},
+        "name": () => {return osu.ChangeRoomSettings(room_id, {name: args.join(' ')})},
+        "invite": async () => {return osu.InvitePlayer(room_id, await ircStyleUsername(args[0]))},
+        "lock": () => {return osu.SetLockState(room_id, {locked: true})},
+        "unlock": () => {return osu.SetLockState(room_id, {locked: false})},
+        "set": () => {return osu.ChangeRoomSettings(room_id, {type: args[0] == 0 ? "head_to_head" : "team_versus"})},
+        "start": () => {return osu.StartMatch(room_id, {countdown: parseInt(args[0])})},
+        "abort": () => {return osu.AbortMatch(room_id)},
+        "team": async () => {return osu.MoveUser(room_id, {user_id: await ircStyleUsername(args[0]), team: args[1]})},
         "move": () => {return addSystemMsg("Unimplemented Command")},
-        "map": () => {return osu.EditCurrentPlaylistItem(currentRoomId, {beatmap_id: parseInt(args[0]), ruleset_id: parseInt(args[1]) ?? 0 })},
-        "mods": () => {return osu.EditCurrentPlaylistItem(currentRoomId, handleModChange(args))},
+        "map": () => {return osu.EditCurrentPlaylistItem(room_id, {beatmap_id: parseInt(args[0]), ruleset_id: parseInt(args[1]) ?? 0 })},
+        "mods": () => {return osu.EditCurrentPlaylistItem(room_id, handleModChange(args))},
         "allowed_mods": () => {
             let mods = args[0].split("+")
             // this is TECHNICALLY not up to spec of lazer tournament
@@ -82,7 +82,7 @@ async function cmdRunner(cmd, ...args) {
             if (mods.length == 1 && args.length >= 2) mods = args
             
             mods = mods.map(x => {return {acronym: x.toUpperCase()}});
-            return osu.EditCurrentPlaylistItem(currentRoomId, {allowed_mods: mods});
+            return osu.EditCurrentPlaylistItem(room_id, {allowed_mods: mods});
 
         }, // CUSTOM COMMAND
         "timer": () => {
@@ -90,28 +90,26 @@ async function cmdRunner(cmd, ...args) {
             countdown_id = startTimer(parseInt(args[0]));
         },
         "aborttimer": () => { // TODO for this and the button, dont make it erroneously osu.StopMatchCountdown
-            osu.StopMatchCountdown(currentRoomId)
+            osu.StopMatchCountdown(room_id)
             if (countdown_id != null) {
                 clearInterval(countdown_id)
                 addSystemMsg("Countdown aborted")
                 countdown_id = null
             }
         },
-        "kick": async () => {return osu.KickPlayer(currentRoomId, await ircStyleUsername(args[0]))},
-        "ban": async () => {return osu.BanUser(currentRoomId, await ircStyleUsername(args[0]))},
-        "password": () => {return osu.ChangeRoomSettings(currentRoomId, {password: args[0]})},
-        "addref": async () => {return osu.AddReferee(currentRoomId, await ircStyleUsername(args[0]))}, // technically needs to be tested
-        "removeref": async () => {return osu.RemoveReferee(currentRoomId, await ircStyleUsername(args[0]))},
+        "kick": async () => {return osu.KickPlayer(room_id, await ircStyleUsername(args[0]))},
+        "ban": async () => {return osu.BanUser(room_id, await ircStyleUsername(args[0]))},
+        "password": () => {return osu.ChangeRoomSettings(room_id, {password: args[0]})},
+        "addref": async () => {return osu.AddReferee(room_id, await ircStyleUsername(args[0]))}, // technically needs to be tested
+        "removeref": async () => {return osu.RemoveReferee(room_id, await ircStyleUsername(args[0]))},
         "listrefs": () => {return addSystemMsg("Unimplemented")}, // need custom logic
         "close": () => {
-            osu.CloseRoom(currentRoomId)
+            osu.CloseRoom(room_id)
             hideRoomActions() // copied around, TODO generalize
             showRoomCreation()
             connected = false
             players = {}
             playlistItems = {}
-            refreshPlaylistItems()
-            //chat_channel_id = ""
     
             document.getElementById("chat-messages").innerHTML = '<div id="no-messages" class="text-gray-500 dark:text-gray-400 text-sm italic">No messages yet...</div>'
         },
@@ -125,9 +123,6 @@ async function cmdRunner(cmd, ...args) {
         return false;
     }
     await map[cmd]()
-    //for (const x of Object.entries(await map[cmd])) {
-    //    osu[x[0]](currentRoomId, x[1])
-    //}
 }
 
 function handleModChange(args) {
@@ -267,10 +262,6 @@ document.addEventListener('click', (e) => {
     }
 })
 
-// ── State ─────────────────────────────────────────────────────────────────
-let currentRoomId = null
-
-
 // ── Helpers ───────────────────────────────────────────────────────────────
 
 // automatically log all incoming events
@@ -304,7 +295,6 @@ function showRoomCreation() {
 
 
 function showRoomActions(roomId, channelId, name, rm_password) {
-    currentRoomId = roomId
     password = rm_password;
     room_name = name;
     document.getElementById('room-actions').classList.remove('hidden')
@@ -327,7 +317,6 @@ function showRoomActions(roomId, channelId, name, rm_password) {
 }
 
 function hideRoomActions() {
-    currentRoomId = null
     document.getElementById('room-actions').classList.add('hidden')
     document.getElementById('room-badge').classList.remove('visible')
     document.getElementById('room-chat-badge').classList.remove('visible')
@@ -374,46 +363,6 @@ function addChatMsg(msg, username, pfp) {
     }
 
 }
-
-function refreshPlaylistItems() {
-    document.getElementById("playlist-items").innerHTML = ""
-    for (const item of Object.values(playlistItems)) {
-        console.log(item)
-        addPlaylistItem(item.id, item.ruleset_id, item.beatmap_id, item.required_mods, item.allowed_mods, item.freestyle, item.was_played)
-    }
-    // i have no idea if it's actually the current..
-    let cur = Object.values(playlistItems).filter(y => y.order == 0)[0];
-    // TODO: this is copy pasted from addVerboseMods
-    const req_mods_div = document.getElementById('req-verbose-mods')
-    const mod_list = req_mods_div.querySelector(".mods-list")
-    const mod_template = document.getElementById("player-mod-item")
-    let empty = true
-    mod_list.innerHTML = ""
-    for (const mod of cur.required_mods) {
-        const mod_clone = mod_template.content.cloneNode(true);
-        const settings_div = mod_clone.querySelector(".mod-item")
-        let mod_name = settings_div.querySelector(".mod-item-name")
-        let mod_settings = settings_div.querySelector(".mod-item-settings")
-        const mod_info = MODS[0].Mods.find(x => x.Acronym == mod.acronym)
-        // settings is in the form of {option: number|string|boolean} im pretty sure
-        let settings_text = ""
-        for (const setting of Object.entries(mod.settings)) {
-            settings_text += `${setting[0]}:${setting[1]}, `
-        }
-        const undefault_settings = mod.settings != null && Object.entries(mod.settings).length != 0
-        if (undefault_settings) {
-            empty = false
-            mod_name.textContent = mod_info.Name
-            mod_settings.textContent = settings_text
-        }
-        if (undefault_settings) mod_list.appendChild(mod_clone)
-    }
-}
-
-
-async function addVerboseMods(user_id, mods) { // might work, **definitely** needs testing
-}
-
 
 // Timer
 function startTimer(seconds) {
@@ -563,7 +512,7 @@ document.getElementById('add-playlist-confirm').addEventListener('click', async 
         allowed_mods.push({acronym: mod})
     }
 
-    const result = await osu.AddPlaylistItem(currentRoomId, {
+    const result = await osu.AddPlaylistItem(room.id, {
         beatmap_id,
         ruleset_id,
         required_mods,
@@ -586,7 +535,7 @@ document.getElementById('edit-playlist-cancel').addEventListener('click', () => 
 })
 
 document.getElementById('edit-playlist-remove').addEventListener('click', async () => {
-    await osu.RemovePlaylistItem(currentRoomId, {
+    await osu.RemovePlaylistItem(room.id, {
         playlist_item_id: room.editing_playlist_item
     })
     editPlaylistModal.classList.remove('visible')
@@ -608,7 +557,7 @@ document.getElementById('edit-playlist-confirm').addEventListener('click', async
         allowed_mods.push({acronym: mod})
     }
 
-    const result = await osu.EditPlaylistItem(currentRoomId, {
+    const result = await osu.EditPlaylistItem(room.id, {
         playlist_item_id: room.editing_playlist_item,
         beatmap_id,
         ruleset_id,
@@ -644,7 +593,7 @@ document.getElementById('invite-player-confirm').addEventListener('click', async
         console.log("wow,", user)
         user_id = user.id
     }
-    const result = await osu.InvitePlayer(currentRoomId, user_id)
+    const result = await osu.InvitePlayer(room.id, user_id)
     if (result.data == null) {
         result.data = user_id
     }
@@ -660,7 +609,7 @@ document.getElementById('invite-player-confirm').addEventListener('click', async
 const toggleLockBtn = document.getElementById('toggle-lock-btn')
 toggleLockBtn.addEventListener('click', async () => {
     const unlocked = toggleLockBtn.textContent == "Unlocked"
-    const result = await osu.SetLockState(currentRoomId, {"locked": unlocked});
+    const result = await osu.SetLockState(room.id, {"locked": unlocked});
     console.log(unlocked)
     ///if (result.success) {
     ///    toggleLockBtn.textContent = (!unlocked) ? "Unlocked" : "Locked";
@@ -695,7 +644,7 @@ document.getElementById('invite-ref-confirm').addEventListener('click', async ()
         const user = (await window.api.api.GetUser(username)).data;
         user_id = user.id
     }
-    const result = await osu.AddReferee(currentRoomId, user_id)
+    const result = await osu.AddReferee(room.id, user_id)
     //console.log(result)
     setResult('invite-ref-result', result)
 
@@ -740,7 +689,6 @@ document.getElementById('join-room-btn').addEventListener('click', async () => {
         showRoomActions(roomId, result.data.chat_channel_id, result.data.name, result.data.password)
         hideRoomCreation()
         connected = true
-        //chat_channel_id = result.data.chat_channel_id;
         const playlists = result.data.playlist
         for (const playlist of playlists) {
             //addPlaylistItem(playlist.id, playlist.ruleset_id, playlist.beatmap_id, playlist.required_mods, playlist.allowed_mods, playlist.freestyle, playlist.was_played)
@@ -763,13 +711,13 @@ document.getElementById('change-settings-btn').addEventListener('click', async (
     settings.type = document.getElementsByName("match_type")[0].checked ? "head_to_head" : "team_versus";
     if (name) settings.name = name
     if (password) settings.password = password
-    const result = await osu.ChangeRoomSettings(currentRoomId, settings)
+    const result = await osu.ChangeRoomSettings(room.id, settings)
     hideSettingsDropdown()
 })
 
 // ── Match Control ──────────────────────────────────────────────────────────
 document.getElementById('start-match-btn').addEventListener('click', async () => {
-    const result = await osu.StartMatch(currentRoomId, {
+    const result = await osu.StartMatch(room.id, {
         'countdown': int('start-match-seconds')
     })
 })
@@ -780,7 +728,7 @@ document.getElementById('timer-btn').addEventListener('click', async () => {
 })
 
 document.getElementById('stop-countdown-btn').addEventListener('click', async () => {
-    const result = await osu.StopMatchCountdown(currentRoomId)
+    const result = await osu.StopMatchCountdown(room.id)
     if (countdown_id != null) {
         clearInterval(countdown_id)
         addSystemMsg("Countdown aborted")
@@ -789,24 +737,22 @@ document.getElementById('stop-countdown-btn').addEventListener('click', async ()
 })
 
 document.getElementById('abort-match-btn').addEventListener('click', async () => {
-    const result = await osu.AbortMatch(currentRoomId)
+    const result = await osu.AbortMatch(room.id)
 })
 
 document.getElementById('close-room-btn').addEventListener('click', async () => {
     const ok = await confirm(
         'Close Room',
-        'Are you sure you want to permanently close room ' + currentRoomId + '? This cannot be undone.'
+        'Are you sure you want to permanently close room ' + room.id + '? This cannot be undone.'
     )
     if (!ok) return
-    const result = await osu.CloseRoom(currentRoomId)
+    const result = await osu.CloseRoom(room.id)
     if (result.success) {
         hideRoomActions() // copied around, TODO generalize
         showRoomCreation()
         connected = false
         players = {}
         playlistItems = {}
-        refreshPlaylistItems()
-        //chat_channel_id = ""
 
         document.getElementById("chat-messages").innerHTML = '<div id="no-messages" class="text-gray-500 dark:text-gray-400 text-sm italic">No messages yet...</div>'
     } else {
@@ -846,10 +792,10 @@ document.getElementById('ping-btn').addEventListener('click', async () => {
 function commandHandler(message) {
     const commands = {
         "/roll": (max) => {
-            osu.Roll(currentRoomId, {max: parseInt(max)})
+            osu.Roll(room.id, {max: parseInt(max)})
         },
         "!mp": (args) => {
-            cmdRunner(args.shift(), ...args)
+            cmdRunner(room.id, args.shift(), ...args)
         }
     }
     commands["!roll"] = commands["/roll"] // same as bancho
@@ -863,7 +809,7 @@ function commandHandler(message) {
 
 // ── Event listeners ────────────────────────────────────────────────────────
 window.api.on.MatchCompleted(info => {
-    addScore(currentRoomId, info.playlist_item_id)
+    addScore(room.id, info.playlist_item_id)
 })
 
 window.api.api.onChatMessage(async buffer => {
@@ -891,4 +837,5 @@ window.players = () => {return players}
 window.other_players = () => {return other_players}
 window.debugMode = () => debugMode()
 window.playlistItems = () => {return playlistItems}
-window.addVerboseMods = () => {return addVerboseMods}
+window.ircStyleUsername = (str) => {return ircStyleUsername(str)}
+window.MODS = () => {return MODS};
