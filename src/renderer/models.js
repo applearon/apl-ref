@@ -172,7 +172,31 @@ export class Room {
         const beatmap = await GetBeatmap(beatmap_id)
         document.querySelector(`[class~="${playlist_id}"]`).querySelector('.playlist-item-id').textContent = beatmap.beatmapset.title + ` [${beatmap.version}]`
     }
-    
+    #addModSettingUI(mod_list, mod, mod_template) {
+        let empty = true
+        const mod_clone = mod_template.content.cloneNode(true);
+        const settings_div = mod_clone.querySelector(".mod-item")
+        let mod_name = settings_div.querySelector(".mod-item-name")
+        let mod_settings = settings_div.querySelector(".mod-item-settings")
+        const mod_info = MODS[0].Mods.find(x => x.Acronym == mod.acronym)
+        // settings is in the form of {option: number|string|boolean} im pretty sure
+        let settings_text = []
+        for (const setting of Object.entries(mod.settings)) {
+            // MODS()[0].Mods.find(x => x.Acronym == "DA").Settings.find(x => x.Name == "circle_size").Label
+            let label = mod_info.Settings.find(x => x.Name == setting[0]).Label;
+            settings_text.push(`${label}:${setting[1]}`)
+        }
+        settings_text = settings_text.join(", ")
+        const undefault_settings = mod.settings != null && Object.entries(mod.settings).length != 0
+        if (undefault_settings) {
+            empty = false
+            
+            mod_name.textContent = mod_info.Name
+            mod_settings.textContent = settings_text
+        }
+        if (undefault_settings) mod_list.appendChild(mod_clone)
+        return {empty, undefault_settings}
+    }
     async #addVerboseMods(user_id, mods) {
         // TODO add the user's name to the UI & make it pretty
         let user = await this.GetUser(user_id, true)
@@ -183,31 +207,14 @@ export class Room {
         const clone = template.content.cloneNode(true);
         const mod_div = cur != null ? cur : clone.querySelector(".mods-container")
         const mod_list = mod_div.querySelector(".mods-list")
+        let user_div = mod_div.querySelector(".mods-user")
         let empty = true
         mod_list.innerHTML = ""
         for (const mod of mods) { // TODO split it again and such
-            const mod_clone = mod_template.content.cloneNode(true);
-            const settings_div = mod_clone.querySelector(".mod-item")
-            let user_div = mod_div.querySelector(".mods-user")
-            let mod_name = settings_div.querySelector(".mod-item-name")
-            let mod_settings = settings_div.querySelector(".mod-item-settings")
-            const mod_info = MODS[0].Mods.find(x => x.Acronym == mod.acronym)
-            // settings is in the form of {option: number|string|boolean} im pretty sure
-            let settings_text = ""
-            for (const setting of Object.entries(mod.settings)) {
-                // MODS()[0].Mods.find(x => x.Acronym == "DA").Settings.find(x => x.Name == "circle_size").Label
-                let label = mod_info.Settings.find(x => x.Name == setting[0]).Label;
-                settings_text.push(`${label}:${setting[1]}`)
-            }
-            settings_text = settings_text.join(", ")
-            const undefault_settings = mod.settings != null && Object.entries(mod.settings).length != 0
-            if (undefault_settings) {
-                empty = false
-                user_div.textContent = user != undefined ? user.user.username : user_id
-                mod_name.textContent = mod_info.Name
-                mod_settings.textContent = settings_text
-            }
-            if (undefault_settings) mod_list.appendChild(mod_clone)
+            let res = this.#addModSettingUI(mod_list, mod, mod_template)
+            empty = empty && res.empty
+            let undefault_settings = res.undefault_settings
+            if (undefault_settings) user_div.textContent = user != undefined ? user.user.username : user_id
         }
         if (empty) {
             if (cur != null) cur.remove() // delete it if previously modded
@@ -215,35 +222,6 @@ export class Room {
         }
         mod_div.dataset.user_id = user_id
         if (cur == null) verboseMods.appendChild(clone)
-    }
-
-    #addReqVerbose() {
-        let cur = Object.values(this.playlistItems).filter(y => y.order == 0)[0];
-        // TODO: this is copy pasted from addVerboseMods
-        const req_mods_div = document.getElementById('req-verbose-mods')
-        const mod_list = req_mods_div.querySelector(".mods-list")
-        const mod_template = document.getElementById("player-mod-item")
-        mod_list.innerHTML = ""
-        for (const mod of cur.required_mods) {
-            const mod_clone = mod_template.content.cloneNode(true);
-            const settings_div = mod_clone.querySelector(".mod-item")
-            let mod_name = settings_div.querySelector(".mod-item-name")
-            let mod_settings = settings_div.querySelector(".mod-item-settings")
-            const mod_info = MODS[0].Mods.find(x => x.Acronym == mod.acronym)
-            // settings is in the form of {option: number|string|boolean} im pretty sure
-            let settings_text = []
-            for (const setting of Object.entries(mod.settings)) {
-                const label = mod_info.Settings.find(x => x.Name == setting[0]).Label;
-                settings_text.push(`${label}:${setting[1]}`)
-            }
-            settings_text = settings_text.join(", ")
-            const undefault_settings = mod.settings != null && Object.entries(mod.settings).length != 0
-            if (undefault_settings) {
-                mod_name.textContent = mod_info.Name
-                mod_settings.textContent = settings_text
-            }
-            if (undefault_settings) mod_list.appendChild(mod_clone)
-        }
     }
 
     updateUI() {
@@ -270,8 +248,14 @@ export class Room {
         document.getElementsByName("match_type")[1].checked = this.type != "head_to_head"
         
         // Required Mods
-        this.#addReqVerbose()
-
+        let cur = Object.values(this.playlistItems).filter(y => y.order == 0)[0];
+        const req_mods_div = document.getElementById('req-verbose-mods')
+        const mod_list = req_mods_div.querySelector(".mods-list")
+        const mod_template = document.getElementById("player-mod-item")
+        mod_list.innerHTML = ""
+        for (const mod of cur.required_mods) {
+            this.#addModSettingUI(mod_list, mod, mod_template)
+        }
         // Match State
         document.getElementById('toggle-lock-btn').textContent = this.locked ? "Locked" : "Unlocked"
 
