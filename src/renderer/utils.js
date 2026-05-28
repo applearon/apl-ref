@@ -77,6 +77,25 @@ export function showToast(message, duration = 3000) {
     setTimeout(() => toast.classList.add('hidden'), duration)
 }
 
+export function confirmUI(title, body) {
+    return new Promise((resolve) => {
+        document.getElementById('confirm-title').textContent = title
+        document.getElementById('confirm-body').textContent = body
+        const modal = document.getElementById('confirm-modal')
+        modal.classList.add('visible')
+
+        const okBtn = document.getElementById('confirm-ok')
+        const cancelBtn = document.getElementById('confirm-cancel')
+
+        function settle(value) {
+            modal.classList.remove('visible')
+            resolve(value)
+        }
+
+        okBtn.onclick = () => settle(true)
+        cancelBtn.onclick = () => settle(false)
+    })
+}
 
 
 let objs = Object.entries(window.api.send)

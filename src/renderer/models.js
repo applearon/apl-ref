@@ -1,4 +1,4 @@
-import { idFromUsername, osu, GetBeatmap, MODS, addSystemMsg, showToast } from './utils.js'
+import { idFromUsername, osu, GetBeatmap, MODS, addSystemMsg, showToast, confirmUI } from './utils.js'
 
 function hideRoomActions() {
     document.getElementById('room-actions').classList.add('hidden')
@@ -108,13 +108,12 @@ export class Room {
         teamSpan.classList.add(team_class)
         clone.getElementById("player-mods").textContent = "N/A"
         teamSpan.addEventListener("click", async () => {
-            // TODO change to if it's head-to-head
-            //if(teamSpan.classList.contains("team-none")) return;
-            //^ i think it'll just fail?? maybe check specifically if the mode is head-to-head
-            //cant do this cause something something they start out as grey
+            if(this.players[user_id].team == "none") return;
+            // hi if this is causing problems just comment it
+            // it stops it from erroring of changing team when it's head-to-head
             const result = await osu.MoveUser(this.id, {
                 user_id,
-                team: teamSpan.classList.contains("team-red") ? "blue" : "red"
+                team: this.players[user_id].team == "red" ? "blue" : "red"
             })
             console.log(result)
         })
@@ -125,8 +124,7 @@ export class Room {
 
         const kickBtn = clone.querySelector(".kick-btn")
         kickBtn.addEventListener("click", async () => {
-            const confirmed = await confirm("Kick Player", "Are you sure you want to kick " + name + "?")
-            // TODO bring over the real confirm function
+            const confirmed = await confirmUI("Kick Player", "Are you sure you want to kick " + name + "?")
             if (confirmed) {
                 await osu.KickPlayer(this.id, user_id)
             }
@@ -228,7 +226,6 @@ export class Room {
         return {empty, undefault_settings}
     }
     async #addVerboseMods(user_id, mods) {
-        // TODO add the user's name to the UI & make it pretty
         let user = await this.GetUser(user_id, true)
         const verboseMods = document.getElementById("mods-verbose-container");
         const cur = verboseMods.querySelector(`[data-user_id="${user_id}"]`)
@@ -240,7 +237,7 @@ export class Room {
         let user_div = mod_div.querySelector(".mods-user")
         let empty = true
         mod_list.innerHTML = ""
-        for (const mod of mods) { // TODO split it again and such
+        for (const mod of mods) {
             let res = this.#addModSettingUI(mod_list, mod, mod_template)
             empty = empty && res.empty
             let undefault_settings = res.undefault_settings
@@ -257,14 +254,13 @@ export class Room {
     updateUI() {
 
         // Players
+        console.log("Updating UI")
         document.getElementById("player-list").innerHTML = ''
         for (const pid of this.player_slots) { // ordered properly
             const player = this.players[pid]
-            console.log("UI Updating", player)
             this.#addPlayer(player.id, player.status, player.user.username, player.team)
             const playerDiv = document.querySelector(`[data-user_id="${player.id}"]`)
             let mod_str = player.mods.map(item => item.acronym).join(" ")
-            console.log("mod_str", mod_str)
             playerDiv.querySelector(".player-mods").textContent = mod_str ? mod_str : "N/A"
             this.#addVerboseMods(player.id, player.mods)
         }
@@ -350,22 +346,11 @@ export class EventQueue {
             } break;
             case "UserKicked": {
                 if (data.kicked_user_id == window.me.id) {
-                    // IDK MAN LIKE
-                    // it needs to kill itself
-                    // TODO HELP
-                    // hideRoomActions()
-                    // showRoomCreation()
-                    // connected = false
-                    // players = {}
-                    // playlistItems = {}
-                    // refreshPlaylistItems()
-                    // chat_channel_id = ""
-
-                    // document.getElementById("chat-messages").innerHTML = '<div id="no-messages" class="text-gray-500 dark:text-gray-400 text-sm italic">No messages yet...</div>'
-
+                    this.close()
+                    // TODO: make sure this works
                 }
-                delete this.room.players[data.user_id]
-                this.room.player_slots = this.room.player_slots.filter(x => x != data.user_id)
+                delete this.room.players[data.kicked_user_id]
+                this.room.player_slots = this.room.player_slots.filter(x => x != data.kicked_user_id)
             } break;
             case "RoomSettingsChanged": {
                 this.room.name = data.name

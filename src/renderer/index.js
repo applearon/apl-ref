@@ -1,7 +1,7 @@
 // ── Theme Toggle ────────────────────────────────────────────────────────────
 
 import { User, Event, EventQueue, Room } from "./models.js"
-import { idFromUsername, osu, logEvent, MODS, addSystemMsg } from "./utils.js"
+import { idFromUsername, osu, logEvent, MODS, addSystemMsg, confirmUI } from "./utils.js"
 const themeToggle = document.getElementById('theme-toggle')
 
 function updateThemeIcon() {
@@ -46,7 +46,7 @@ async function ircStyleUsername(str) { // old mode is #14573534 for user id, and
     return (await room.GetUser(str, true)).id
 }
 
-// TODO most of these don't update the UI
+// TODO: double check that these all update the UI (or will call a UI update)
 async function cmdRunner(room_id, cmd, ...args) {
     const map = { 
         "name": () => {return osu.ChangeRoomSettings(room_id, {name: args.join(' ')})},
@@ -112,8 +112,7 @@ function handleModChange(args) {
     // "FM" and "NM" also
     if (args.length < 1) {
         console.log("bah youre doing it wrong");
-        // TODO add system message saying it's wrong
-        addSystemMsg("Invalid command")
+        addSystemMsg("Usage: !mp mods MD MD MD[1,2,3,4]")
         return false;
     }
     let mods = args[0].split("+")
@@ -124,7 +123,7 @@ function handleModChange(args) {
     let allowed_mods = []
     for (const mod of mods) {
         if (mod.length < 2) {
-            addSystemMsg("Invalid command")
+            addSystemMsg(`Invalid mod acronym: ${mod}`)
             return false
         }
         const mod_acronym = mod.slice(0,2)
@@ -399,27 +398,6 @@ async function addScore(room_id, playlist_id) {
 function int(id) { return parseInt(document.getElementById(id).value, 10) }
 function str(id) { return document.getElementById(id).value.trim() }
 
-// ── Confirmation modal ────────────────────────────────────────────────────
-function confirm(title, body) {
-    return new Promise((resolve) => {
-        document.getElementById('confirm-title').textContent = title
-        document.getElementById('confirm-body').textContent = body
-        const modal = document.getElementById('confirm-modal')
-        modal.classList.add('visible')
-
-        const okBtn = document.getElementById('confirm-ok')
-        const cancelBtn = document.getElementById('confirm-cancel')
-
-        function settle(value) {
-            modal.classList.remove('visible')
-            resolve(value)
-        }
-
-        okBtn.onclick = () => settle(true)
-        cancelBtn.onclick = () => settle(false)
-    })
-}
-
 // ── Add Playlist Modal ───────────────────────────────────────────────────
 const addPlaylistModal = document.getElementById('add-playlist-modal')
 document.getElementById('add-playlist-btn').addEventListener('click', () => {
@@ -597,7 +575,7 @@ updateStatus()
 setInterval(updateStatus, 5000)
 
 // ── Room Setup ─────────────────────────────────────────────────────────────
-document.getElementById('make-room-btn').addEventListener('click', async () => { // TODO centralize logic for here and joining room
+document.getElementById('make-room-btn').addEventListener('click', async () => {
     const result = await osu.MakeRoom({
         ruleset_id: int('make-ruleset-id'),
         beatmap_id: int('make-beatmap-id'),
@@ -660,7 +638,7 @@ document.getElementById('abort-match-btn').addEventListener('click', async () =>
 })
 
 document.getElementById('close-room-btn').addEventListener('click', async () => {
-    const ok = await confirm(
+    const ok = await confirmUI(
         'Close Room',
         'Are you sure you want to permanently close room ' + room.id + '? This cannot be undone.'
     )
