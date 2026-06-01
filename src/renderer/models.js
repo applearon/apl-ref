@@ -279,8 +279,10 @@ export class Room {
         const mod_list = req_mods_div.querySelector(".mods-list")
         const mod_template = document.getElementById("player-mod-item")
         mod_list.innerHTML = ""
-        for (const mod of cur.required_mods) {
-            this.#addModSettingUI(mod_list, mod, mod_template)
+        if (cur != undefined) { // only happens during inbetween but
+            for (const mod of cur.required_mods) {
+                this.#addModSettingUI(mod_list, mod, mod_template)
+            }
         }
         // Match State
         document.getElementById('toggle-lock-btn').textContent = this.locked ? "Locked" : "Unlocked"
@@ -378,7 +380,7 @@ export class EventQueue {
                 }
             } break;
             case "PlaylistItemRemoved": {
-                delete this.room.playlistItems[data.playlist_item.id]
+                delete this.room.playlistItems[data.playlist_item_id]
             } break;
             case "UserStatusChanged": {
                 this.room.players[data.user_id].status = data.status
