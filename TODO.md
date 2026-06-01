@@ -1,5 +1,4 @@
 UI fixes:
-- Sometimes players joing with the wrong team (maybe since username lookup takes some time, maybe force it to queue? or fallback to user_id until the lookup suceeds)
 - Player Mod Row Should also show freestyle
 - Add ability to change Mod Settings (works with !mp mods)
 - Add Ban User to the UI
@@ -12,7 +11,7 @@ UI fixes:
 New Features:
 - Referee Invited popup to join up
 - Rewrite it to support operating multiple rooms
-    - Class rewrite needs to be done
+    - Class rewrite needs to be done (done)
     - Notifications/sound effects for when things happen (all ready, map end etc)
 - Add more error handling on the osu api side
 - system message when everyone is ready
@@ -21,7 +20,6 @@ New Features:
 - Add Map Stats (length, cs, ar, etc) somewhere (maybe only current?)
 
 Bugs:
-- Room Settings UI element (and maybe others) aren't being updated on the requisite Events
 - Getting kicked from a room as a referee doesn't reset the UI (done, needs more testing)
 - still some OK: null kicking around (inviting ref)
 - how do you properly leave a room now lmao (restarting the app i guess...)
@@ -31,6 +29,7 @@ Bugs:
 - (IMPORTANT) Occasionally osu!api doesn't work??? only recounted once (mumei)
 - Chat is sometimes broken on first run (token doesn't exist yet or something)
     - Maybe with refreshing the token not working??
+    - Seems to only happen the first time????
 # 1.0 Blocking Issues
 - Support operating multiple rooms at once
 - Notification sounds
