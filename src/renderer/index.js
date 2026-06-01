@@ -1,6 +1,7 @@
 // ── Theme Toggle ────────────────────────────────────────────────────────────
 
-import { User } from "./models.js"
+import { User, Event, EventQueue, Room } from "./models.js"
+import { idFromUsername, osu, logEvent, MODS, addSystemMsg, confirmUI } from "./utils.js"
 const themeToggle = document.getElementById('theme-toggle')
 
 function updateThemeIcon() {
@@ -22,35 +23,19 @@ if (savedTheme === 'light') {
     document.documentElement.classList.remove('dark')
 }
 updateThemeIcon()
-let MODS;
-fetch('mods.json').then(mod_res => {
-    mod_res.json().then(mods => MODS = mods)
-})
 
 document.title = document.title + ": " + window.version
 
-// Stored Data TODO: make this into a proper class
-//             ^ blocking step for supporting multiple rooms
-let players = {};
-let other_players = {}; // removes calling too much, should be partially(?) replaced with referee list
-let playlistItems = {};
-let beatmaps = {};
-let chat_channel_id = ""
-let connected = false;
+window.beatmaps = {}; // global cause like
+// i cant imagine that will cause problems?
 
-let editing_playlist_item = 0;
-let password = ""
-let room_name = ""
+let Queue;
+let room;
 
 let countdown_id;
-// TODO this is so cursed and i have to like rewrite a significant portion of this
-// but it works for now so whatever
-const addingUser = new Map();
 
-let me;
 window.api.api.GetSelf().then (x => {
-    me = x.data
-    other_players[x.data.id] = new User(x.data.id, x.data)
+    window.me = x.data
 })
 
 
@@ -58,23 +43,23 @@ async function ircStyleUsername(str) { // old mode is #14573534 for user id, and
     if (str[0] == '#') {
         return parseInt(str.substring(1))
     }
-    return (await GetUser(str)).id
+    return (await room.GetUser(str, true)).id
 }
 
-// TODO most of these don't update the UI
-async function cmdRunner(cmd, ...args) {
+// TODO: double check that these all update the UI (or will call a UI update)
+async function cmdRunner(room_id, cmd, ...args) {
     const map = { 
-        "name": () => {return osu.ChangeRoomSettings(currentRoomId, {name: args.join(' ')})},
-        "invite": async () => {return osu.InvitePlayer(currentRoomId, await ircStyleUsername(args[0]))},
-        "lock": () => {return osu.SetLockState(currentRoomId, {locked: true})},
-        "unlock": () => {return osu.SetLockState(currentRoomId, {locked: false})},
-        "set": () => {return osu.ChangeRoomSettings(currentRoomId, {type: args[0] == 0 ? "head_to_head" : "team_versus"})},
-        "start": () => {return osu.StartMatch(currentRoomId, {countdown: parseInt(args[0])})},
-        "abort": () => {return osu.AbortMatch(currentRoomId)},
-        "team": async () => {return osu.MoveUser(currentRoomId, {user_id: await ircStyleUsername(args[0]), team: args[1]})},
+        "name": () => {return osu.ChangeRoomSettings(room_id, {name: args.join(' ')})},
+        "invite": async () => {return osu.InvitePlayer(room_id, await ircStyleUsername(args[0]))},
+        "lock": () => {return osu.SetLockState(room_id, {locked: true})},
+        "unlock": () => {return osu.SetLockState(room_id, {locked: false})},
+        "set": () => {return osu.ChangeRoomSettings(room_id, {type: args[0] == 0 ? "head_to_head" : "team_versus"})},
+        "start": () => {return osu.StartMatch(room_id, {countdown: parseInt(args[0])})},
+        "abort": () => {return osu.AbortMatch(room_id)},
+        "team": async () => {return osu.MoveUser(room_id, {user_id: await ircStyleUsername(args[0]), team: args[1]})},
         "move": () => {return addSystemMsg("Unimplemented Command")},
-        "map": () => {return osu.EditCurrentPlaylistItem(currentRoomId, {beatmap_id: parseInt(args[0]), ruleset_id: parseInt(args[1]) ?? 0 })},
-        "mods": () => {return osu.EditCurrentPlaylistItem(currentRoomId, handleModChange(args))},
+        "map": () => {return osu.EditCurrentPlaylistItem(room_id, {beatmap_id: parseInt(args[0]), ruleset_id: parseInt(args[1]) ?? 0 })},
+        "mods": () => {return osu.EditCurrentPlaylistItem(room_id, handleModChange(args))},
         "allowed_mods": () => {
             let mods = args[0].split("+")
             // this is TECHNICALLY not up to spec of lazer tournament
@@ -82,7 +67,7 @@ async function cmdRunner(cmd, ...args) {
             if (mods.length == 1 && args.length >= 2) mods = args
             
             mods = mods.map(x => {return {acronym: x.toUpperCase()}});
-            return osu.EditCurrentPlaylistItem(currentRoomId, {allowed_mods: mods});
+            return osu.EditCurrentPlaylistItem(room_id, {allowed_mods: mods});
 
         }, // CUSTOM COMMAND
         "timer": () => {
@@ -90,28 +75,23 @@ async function cmdRunner(cmd, ...args) {
             countdown_id = startTimer(parseInt(args[0]));
         },
         "aborttimer": () => { // TODO for this and the button, dont make it erroneously osu.StopMatchCountdown
-            osu.StopMatchCountdown(currentRoomId)
+            osu.StopMatchCountdown(room_id)
             if (countdown_id != null) {
                 clearInterval(countdown_id)
                 addSystemMsg("Countdown aborted")
                 countdown_id = null
             }
         },
-        "kick": async () => {return osu.KickPlayer(currentRoomId, await ircStyleUsername(args[0]))},
-        "ban": async () => {return osu.BanUser(currentRoomId, await ircStyleUsername(args[0]))},
-        "password": () => {return osu.ChangeRoomSettings(currentRoomId, {password: args[0]})},
-        "addref": async () => {return osu.AddReferee(currentRoomId, await ircStyleUsername(args[0]))}, // technically needs to be tested
-        "removeref": async () => {return osu.RemoveReferee(currentRoomId, await ircStyleUsername(args[0]))},
+        "kick": async () => {return osu.KickPlayer(room_id, await ircStyleUsername(args[0]))},
+        "ban": async () => {return osu.BanUser(room_id, await ircStyleUsername(args[0]))},
+        "password": () => {return osu.ChangeRoomSettings(room_id, {password: args[0]})},
+        "addref": async () => {return osu.AddReferee(room_id, await ircStyleUsername(args[0]))}, // technically needs to be tested
+        "removeref": async () => {return osu.RemoveReferee(room_id, await ircStyleUsername(args[0]))},
         "listrefs": () => {return addSystemMsg("Unimplemented")}, // need custom logic
         "close": () => {
-            osu.CloseRoom(currentRoomId)
-            hideRoomActions() // copied around, TODO generalize
-            showRoomCreation()
-            connected = false
-            players = {}
-            playlistItems = {}
-            refreshPlaylistItems()
-            chat_channel_id = ""
+            osu.CloseRoom(room.id)
+            room.close()
+            room = null
     
             document.getElementById("chat-messages").innerHTML = '<div id="no-messages" class="text-gray-500 dark:text-gray-400 text-sm italic">No messages yet...</div>'
         },
@@ -125,9 +105,6 @@ async function cmdRunner(cmd, ...args) {
         return false;
     }
     await map[cmd]()
-    //for (const x of Object.entries(await map[cmd])) {
-    //    osu[x[0]](currentRoomId, x[1])
-    //}
 }
 
 function handleModChange(args) {
@@ -135,8 +112,7 @@ function handleModChange(args) {
     // "FM" and "NM" also
     if (args.length < 1) {
         console.log("bah youre doing it wrong");
-        // TODO add system message saying it's wrong
-        addSystemMsg("Invalid command")
+        addSystemMsg("Usage: !mp mods MD MD MD[1,2,3,4]")
         return false;
     }
     let mods = args[0].split("+")
@@ -147,7 +123,7 @@ function handleModChange(args) {
     let allowed_mods = []
     for (const mod of mods) {
         if (mod.length < 2) {
-            addSystemMsg("Invalid command")
+            addSystemMsg(`Invalid mod acronym: ${mod}`)
             return false
         }
         const mod_acronym = mod.slice(0,2)
@@ -209,8 +185,8 @@ function handleModChange(args) {
 // ── UI helpers ──────────────────────────────────────────────────────────────
 
 function showSettingsDropdown() {
-    document.getElementById('settings-name').value = room_name
-    document.getElementById('settings-password').value = password
+    document.getElementById('settings-name').value = room.name
+    document.getElementById('settings-password').value = room.password
     document.getElementById('settings-dropdown').classList.add('visible')
 }
 
@@ -267,51 +243,15 @@ document.addEventListener('click', (e) => {
     }
 })
 
-// ── State ─────────────────────────────────────────────────────────────────
-let currentRoomId = null
-
-
 // ── Helpers ───────────────────────────────────────────────────────────────
-let objs = Object.entries(window.api.send)
-let osu = {}
-for (const cmd of objs) {
-    osu[cmd[0]] = (...args) => {
-        const res = cmd[1](...args)
-        logEvent(cmd[0], res)
-        return res
-    }
-}
 
 // automatically log all incoming events
-objs = Object.entries(window.api.on)
+let objs = Object.entries(window.api.on)
 for (const cmd of objs) {
     cmd[1](info => {
+        Queue.add(new Event(cmd[0], info))
         logEvent(cmd[0], info)
     })
-}
-
-async function GetUser(user_id, normal) { // normal is true if it's a player, false if it's a random
-    normal = normal ?? false
-    user_id = idFromUsername(user_id) ?? user_id
-    let user = players[user_id] ?? other_players[user_id]
-    if (user != undefined) {
-        return user
-    } else {
-        console.log("grabbing new player!!")
-        user = (await window.api.api.GetUser(user_id)).data
-        let ret = new User(user_id, user, null, null, null, null)
-        if (normal) players[user.id] = ret
-        if (!normal) other_players[user.id] = ret
-        return ret
-    }
-}
-
-async function GetBeatmap(beatmap_id) {
-    if (beatmaps[beatmap_id]) return beatmaps[beatmap_id]
-    let map = await window.api.api.GetBeatmap(beatmap_id)
-    console.log("grabbing beatmap data")
-    beatmaps[beatmap_id] = map.data
-    return map.data
 }
 
 function setResult(id, result) {
@@ -326,224 +266,14 @@ function setResult(id, result) {
     }
 }
 
-async function logEvent(name, data) {
-    let isRes = false;
-    const keep_room_id = ["RefereeInvited"]
-    if (data instanceof Promise) { // if it's a method we sent
-        data = await data
-        isRes = true;
-    }
-    console.log(name, data)
-    const log = document.getElementById('event-log')
-    const placeholder = log.querySelector('.event-placeholder')
-    if (placeholder) placeholder.remove()
-    const entry = document.createElement('div')
-    entry.className = 'event-entry'
-    const time = document.createElement('div');
-    time.textContent = name + ': [' + new Date().toLocaleTimeString() + ']'
-    if (isRes) {
-        time.textContent += data.success ? " Succeeded" : " Failed"
-        data = data.success ? data.data : data.error
-    } else {
-        if (!keep_room_id.includes(name)) delete data.room_id // dont need since this client only works 1 room at a time
-    }
-    const logData = document.createElement('div');
-    if (data == null) {data = ''}
-    if (typeof data == 'string') {
-        logData.textContent = data
-    } else {
-        for(const [key, value] of Object.entries(data)) {
-            const x = document.createElement('div');
-            x.textContent = key + ": " + (typeof value == 'string' ? value : JSON.stringify(value, null, ' '))
-            logData.append(x)
-        }
-    }
-    entry.append(time)
-    entry.append(logData)
-    log.prepend(entry)
-}
-
-
-function idFromUsername(username) {
-    let user = Object.keys(players).find(key => players[key].user.username == username)
-    if (user == undefined) user = Object.keys(other_players).find(key => other_players[key].username == username)
-    if (user != undefined) {
-        return user;
-    } else {
-        return null;
-    }
-}
-
 function hideRoomCreation() {
     document.getElementById('room-setup').classList.add('hidden')
 }
 
-function showRoomCreation() {
+function debugMode() { // this is kinda useless now but wtvs
     document.getElementById('room-setup').classList.remove('hidden')
-}
-
-
-function showRoomActions(roomId, channelId, name, rm_password) {
-    currentRoomId = roomId
-    password = rm_password;
-    room_name = name;
-    document.getElementById('room-actions').classList.remove('hidden')
-    document.getElementById('room-badge').classList.add('visible')
-    document.getElementById('room-chat-badge').classList.add('visible')
-    document.getElementById('navbar-room-controls').classList.add('visible')
-
-    document.getElementById('add-referee').classList.add('visible')
-    document.getElementById('room-badge').addEventListener('click', () => {
-        try {
-            navigator.clipboard.writeText("https://osu.ppy.sh/multiplayer/rooms/" + roomId)
-            showToast("Copied to clipboard!")
-        } catch {
-            showToast("Failed to copy. idk what happened")
-        }
-    })
-    document.getElementById('room-chat-id').textContent = channelId
-    document.getElementById('room-name').textContent = name
-
-}
-
-function hideRoomActions() {
-    currentRoomId = null
-    document.getElementById('room-actions').classList.add('hidden')
-    document.getElementById('room-badge').classList.remove('visible')
-    document.getElementById('room-chat-badge').classList.remove('visible')
-    document.getElementById('navbar-room-controls').classList.remove('visible')
-
-    document.getElementById('add-referee').classList.remove('visible')
-    document.getElementById('room-chat-id').textContent = ''
-    document.getElementById('room-name').textContent = "APL Ref Client"
-}
-
-function showToast(message, duration = 3000) {
-    const toast = document.getElementById('toast')
-    toast.textContent = message
-    toast.classList.remove('hidden')
-    setTimeout(() => toast.classList.add('hidden'), duration)
-}
-
-
-function debugMode() {
-    showRoomActions()
-    showRoomCreation()
     const ping = document.getElementById("debug-menu")
     ping.classList.add('visible')
-}
-function addPlayer(user_id, player_status, name, team) {
-    // "idle", "ready", "playing", "finished_play", "spectating"
-    const team_class = "team-" + team.toLowerCase() // only red and blue or none
-    const template = document.getElementById("player-item")
-    const clone = template.content.cloneNode(true);
-    clone.querySelector(".player-status").textContent = player_status
-    clone.querySelector(".player-name").textContent = name
-    const teamSpan = clone.querySelector(".player-team")
-    teamSpan.classList.add(team_class)
-    clone.getElementById("player-mods").textContent = "N/A"
-    teamSpan.addEventListener("click", async () => {
-        // TODO change to if it's head-to-head
-        //if(teamSpan.classList.contains("team-none")) return;
-        //^ i think it'll just fail?? maybe check specifically if the mode is head-to-head
-        //cant do this cause something something they start out as grey
-        const result = await osu.MoveUser(currentRoomId, {
-            user_id,
-            team: teamSpan.classList.contains("team-red") ? "blue" : "red"
-        })
-        console.log(result)
-    })
-    teamSpan.style.cursor = 'pointer';
-
-    clone.querySelector(".player-item").dataset.user_id =user_id
-    
-
-    const kickBtn = clone.querySelector(".kick-btn")
-    kickBtn.addEventListener("click", async () => {
-        const confirmed = await confirm("Kick Player", "Are you sure you want to kick " + name + "?")
-        if (confirmed) {
-            await osu.KickPlayer(currentRoomId, user_id)
-        }
-    })
-    
-    document.getElementById("player-list").appendChild(clone)
-}
-
-async function addPlaylistItem(playlist_id, ruleset_id, beatmap_id, required_mods, allowed_mods, freestyle, was_played) {
-    const modes = ["osu!", "taiko", "catch", "mania"]
-    const template = document.getElementById("playlist-item")
-    const textTemplate = document.getElementById("playlist-text")
-    const beatmap_text = textTemplate.content.cloneNode(true);
-    const clone = template.content.cloneNode(true);
-    beatmap_text.querySelector(".label").textContent = "Beatmap ID"
-    beatmap_text.querySelector(".value").textContent = beatmap_id
-    clone.querySelector(".playlist-item").appendChild(beatmap_text);
-
-    const req_mods_text = textTemplate.content.cloneNode(true);
-    req_mods_text.querySelector(".label").textContent = "Required Mods"
-    let req_mod_readable = required_mods.map(item => item.acronym).join(" ");
-    req_mods_text.querySelector(".value").textContent = req_mod_readable
-    clone.querySelector(".playlist-item").appendChild(req_mods_text);
-
-    const alw_mods_text = textTemplate.content.cloneNode(true);
-    alw_mods_text.querySelector(".label").textContent = "Allowed Mods"
-    let alw_mod_readable = allowed_mods.map(item => item.acronym).join(" ");
-    alw_mods_text.querySelector(".value").textContent = alw_mod_readable
-    clone.querySelector(".playlist-item").appendChild(alw_mods_text);
-
-    const freestyle_text = textTemplate.content.cloneNode(true);
-    freestyle_text.querySelector(".label").textContent = "Freestyle"
-    freestyle_text.querySelector(".value").textContent = freestyle.toString()
-    clone.querySelector(".playlist-item").appendChild(freestyle_text);
-
-    clone.querySelector(".playlist-item-ruleset").textContent = modes[ruleset_id]
-
-    clone.querySelector(".playlist-item").classList.add(playlist_id)
-
-
-    const edit_btn = clone.querySelector(".edit-playlist-btn")
-    edit_btn.addEventListener('click', () => {
-        console.log("hi chat")
-        const modes = ["osu!", "taiko", "catch", "mania"]
-      
-        const textElements = edit_btn.parentNode.parentNode.parentNode.querySelectorAll(".playlist-item-text")
-        let beatmapId = ""
-        let requiredMods = ""
-        let allowedMods = ""
-        let freestyle = false
-        for (const el of textElements) {
-            const label = el.querySelector(".label").textContent
-            const value = el.querySelector(".value").textContent
-            if (label === "Beatmap ID") beatmapId = value
-            else if (label === "Required Mods") requiredMods = value
-            else if (label === "Allowed Mods") allowedMods = value
-            else if (label === "Freestyle") freestyle = value === "true"
-        }
-      
-        const rulesetText = edit_btn.parentNode.parentNode.parentNode.querySelector(".playlist-item-ruleset").textContent
-        const rulesetId = modes.indexOf(rulesetText)
-      
-        document.getElementById("popup-edit-beatmap-id").value = beatmapId
-        document.getElementById("popup-edit-ruleset-id").value = rulesetId >= 0 ? rulesetId : ""
-        document.getElementById("popup-edit-required-mods").value = requiredMods
-        document.getElementById("popup-edit-allowed-mods").value = allowedMods
-        document.getElementById("popup-edit-freestyle").checked = freestyle
-        editing_playlist_item = playlist_id
-        editPlaylistModal.classList.add('visible')
-    })
-
-    document.getElementById("playlist-items").appendChild(clone)
-    const beatmap = await GetBeatmap(beatmap_id)
-    document.querySelector(`[class~="${playlist_id}"]`).querySelector('.playlist-item-id').textContent = beatmap.beatmapset.title + ` [${beatmap.version}]`
-}
-
-function removePlayer(user_id) {
-    document.querySelector(`[data-user_id="${user_id}"]`).remove()
-    return delete players[user_id]
-}
-
-function removePlaylistItem(playlist_id) {
-    document.querySelector(`[class~="${playlist_id}"]`).remove()
 }
 
 function addChatMsg(msg, username, pfp) {
@@ -564,110 +294,16 @@ function addChatMsg(msg, username, pfp) {
 
 }
 
-function addSystemMsg(msg) {
-    document.getElementById("no-messages")?.remove()
-    const template = document.getElementById("sys-message")
-    const clone = template.content.cloneNode(true);
-    
-    clone.querySelector('.sys-message').textContent = msg
-    
-    const chatbox = document.getElementById("chat-messages")
-    chatbox.appendChild(clone)
-
-    if (chatbox.scrollHeight - chatbox.scrollTop - chatbox.clientHeight < 50) {
-        chatbox.scrollTop = chatbox.scrollHeight;
-    }
-
-}
-
-function refreshPlaylistItems() {
-    document.getElementById("playlist-items").innerHTML = ""
-    for (const item of Object.values(playlistItems)) {
-        console.log(item)
-        addPlaylistItem(item.id, item.ruleset_id, item.beatmap_id, item.required_mods, item.allowed_mods, item.freestyle, item.was_played)
-    }
-    // i have no idea if it's actually the current..
-    let cur = Object.values(playlistItems).filter(y => y.order == 0)[0];
-    // TODO: this is copy pasted from addVerboseMods
-    const req_mods_div = document.getElementById('req-verbose-mods')
-    const mod_list = req_mods_div.querySelector(".mods-list")
-    const mod_template = document.getElementById("player-mod-item")
-    let empty = true
-    mod_list.innerHTML = ""
-    for (const mod of cur.required_mods) {
-        const mod_clone = mod_template.content.cloneNode(true);
-        const settings_div = mod_clone.querySelector(".mod-item")
-        let mod_name = settings_div.querySelector(".mod-item-name")
-        let mod_settings = settings_div.querySelector(".mod-item-settings")
-        const mod_info = MODS[0].Mods.find(x => x.Acronym == mod.acronym)
-        // settings is in the form of {option: number|string|boolean} im pretty sure
-        let settings_text = ""
-        for (const setting of Object.entries(mod.settings)) {
-            settings_text += `${setting[0]}:${setting[1]}, `
-        }
-        const undefault_settings = mod.settings != null && Object.entries(mod.settings).length != 0
-        if (undefault_settings) {
-            empty = false
-            mod_name.textContent = mod_info.Name
-            mod_settings.textContent = settings_text
-        }
-        if (undefault_settings) mod_list.appendChild(mod_clone)
-    }
-}
-
-
-async function addVerboseMods(user_id, mods) { // might work, **definitely** needs testing
-    // TODO add the user's name to the UI & make it pretty
-    let user = await GetUser(user_id)
-    const verboseMods = document.getElementById("mods-verbose-container");
-    const cur = verboseMods.querySelector(`[data-user_id="${user_id}"]`)
-    const template = document.getElementById("player-mods-verbose");
-    const mod_template = document.getElementById("player-mod-item")
-    const clone = template.content.cloneNode(true);
-    const mod_div = cur != null ? cur : clone.querySelector(".mods-container")
-    const mod_list = mod_div.querySelector(".mods-list")
-    let empty = true
-    mod_list.innerHTML = ""
-    for (const mod of mods) { // TODO split it again and such
-        const mod_clone = mod_template.content.cloneNode(true);
-        const settings_div = mod_clone.querySelector(".mod-item")
-        let user_div = mod_div.querySelector(".mods-user")
-        let mod_name = settings_div.querySelector(".mod-item-name")
-        let mod_settings = settings_div.querySelector(".mod-item-settings")
-        const mod_info = MODS[0].Mods.find(x => x.Acronym == mod.acronym)
-        // settings is in the form of {option: number|string|boolean} im pretty sure
-        let settings_text = ""
-        for (const setting of Object.entries(mod.settings)) {
-            settings_text += `${setting[0]}:${setting[1]}, `
-        }
-        const undefault_settings = mod.settings != null && Object.entries(mod.settings).length != 0
-        if (undefault_settings) {
-            empty = false
-            user_div.textContent = user != undefined ? user.user.username : user_id
-            mod_name.textContent = mod_info.Name
-            mod_settings.textContent = settings_text
-        }
-        if (undefault_settings) mod_list.appendChild(mod_clone)
-    }
-    if (empty) {
-        if (cur != null) cur.remove() // delete it if previously modded
-        return;
-    }
-    mod_div.dataset.user_id = user_id
-    if (cur == null) verboseMods.appendChild(clone)
-}
-
-
 // Timer
 function startTimer(seconds) {
     const informTimes = [30, 15, 10, 5]
-    window.api.api.SendMessage(chat_channel_id, `Started a countdown for ${seconds} seconds`)
+    window.api.api.SendMessage(room.chat_channel_id, `Started a countdown for ${seconds} seconds`)
     let elapsed = 0
     countdown_id = setInterval(() => {
         //console.log(elapsed, seconds)
         if (elapsed >= seconds) {
             clearInterval(countdown_id)
-            window.api.api.SendMessage(chat_channel_id, "The countdown has ended.")
+            window.api.api.SendMessage(room.chat_channel_id, "The countdown has ended.")
             countdown_id = null
             return;
         }
@@ -675,7 +311,7 @@ function startTimer(seconds) {
             let msg = "The countdown has "
             msg += (seconds-elapsed) >= 60 ? `${Math.floor((seconds - elapsed) / 60)} minutes ` : ""
             msg += (seconds - elapsed) % 60 != 0 ? `${(seconds - elapsed) % 60} seconds remaining.` : "remaining."
-            window.api.api.SendMessage(chat_channel_id, msg)
+            window.api.api.SendMessage(room.chat_channel_id, msg)
         }
         elapsed += 1;
     }, 1000)
@@ -726,6 +362,8 @@ function removeAllScores() {
 }
 
 async function addScore(room_id, playlist_id) {
+    // this entire thing is kinda cooked
+    // TODO: decouple this and store the previous scores too
     removeAllScores()
     const head_to_head = document.getElementById('cur-match-type').textContent == "head_to_head"
     scoreMode(head_to_head);
@@ -760,27 +398,6 @@ async function addScore(room_id, playlist_id) {
 function int(id) { return parseInt(document.getElementById(id).value, 10) }
 function str(id) { return document.getElementById(id).value.trim() }
 
-// ── Confirmation modal ────────────────────────────────────────────────────
-function confirm(title, body) {
-    return new Promise((resolve) => {
-        document.getElementById('confirm-title').textContent = title
-        document.getElementById('confirm-body').textContent = body
-        const modal = document.getElementById('confirm-modal')
-        modal.classList.add('visible')
-
-        const okBtn = document.getElementById('confirm-ok')
-        const cancelBtn = document.getElementById('confirm-cancel')
-
-        function settle(value) {
-            modal.classList.remove('visible')
-            resolve(value)
-        }
-
-        okBtn.onclick = () => settle(true)
-        cancelBtn.onclick = () => settle(false)
-    })
-}
-
 // ── Add Playlist Modal ───────────────────────────────────────────────────
 const addPlaylistModal = document.getElementById('add-playlist-modal')
 document.getElementById('add-playlist-btn').addEventListener('click', () => {
@@ -804,7 +421,7 @@ document.getElementById('add-playlist-confirm').addEventListener('click', async 
         allowed_mods.push({acronym: mod})
     }
 
-    const result = await osu.AddPlaylistItem(currentRoomId, {
+    const result = await osu.AddPlaylistItem(room.id, {
         beatmap_id,
         ruleset_id,
         required_mods,
@@ -827,8 +444,8 @@ document.getElementById('edit-playlist-cancel').addEventListener('click', () => 
 })
 
 document.getElementById('edit-playlist-remove').addEventListener('click', async () => {
-    await osu.RemovePlaylistItem(currentRoomId, {
-        playlist_item_id: editing_playlist_item
+    await osu.RemovePlaylistItem(room.id, {
+        playlist_item_id: room.editing_playlist_item
     })
     editPlaylistModal.classList.remove('visible')
 })
@@ -849,8 +466,8 @@ document.getElementById('edit-playlist-confirm').addEventListener('click', async
         allowed_mods.push({acronym: mod})
     }
 
-    const result = await osu.EditPlaylistItem(currentRoomId, {
-        playlist_item_id: editing_playlist_item,
+    const result = await osu.EditPlaylistItem(room.id, {
+        playlist_item_id: room.editing_playlist_item,
         beatmap_id,
         ruleset_id,
         required_mods,
@@ -885,7 +502,7 @@ document.getElementById('invite-player-confirm').addEventListener('click', async
         console.log("wow,", user)
         user_id = user.id
     }
-    const result = await osu.InvitePlayer(currentRoomId, user_id)
+    const result = await osu.InvitePlayer(room.id, user_id)
     if (result.data == null) {
         result.data = user_id
     }
@@ -901,7 +518,7 @@ document.getElementById('invite-player-confirm').addEventListener('click', async
 const toggleLockBtn = document.getElementById('toggle-lock-btn')
 toggleLockBtn.addEventListener('click', async () => {
     const unlocked = toggleLockBtn.textContent == "Unlocked"
-    const result = await osu.SetLockState(currentRoomId, {"locked": unlocked});
+    const result = await osu.SetLockState(room.id, {"locked": unlocked});
     console.log(unlocked)
     ///if (result.success) {
     ///    toggleLockBtn.textContent = (!unlocked) ? "Unlocked" : "Locked";
@@ -936,7 +553,7 @@ document.getElementById('invite-ref-confirm').addEventListener('click', async ()
         const user = (await window.api.api.GetUser(username)).data;
         user_id = user.id
     }
-    const result = await osu.AddReferee(currentRoomId, user_id)
+    const result = await osu.AddReferee(room.id, user_id)
     //console.log(result)
     setResult('invite-ref-result', result)
 
@@ -958,22 +575,17 @@ updateStatus()
 setInterval(updateStatus, 5000)
 
 // ── Room Setup ─────────────────────────────────────────────────────────────
-document.getElementById('make-room-btn').addEventListener('click', async () => { // TODO centralize logic for here and joining room
+document.getElementById('make-room-btn').addEventListener('click', async () => {
     const result = await osu.MakeRoom({
         ruleset_id: int('make-ruleset-id'),
         beatmap_id: int('make-beatmap-id'),
         name: str('make-room-name')
     })
     if (result.success && result.data) {
-        showRoomActions(result.data.room_id, result.data.chat_channel_id, result.data.name, result.data.password)
+        room = new Room(result.data)
+        Queue = new EventQueue(room)
         hideRoomCreation()
-        connected = true
-        chat_channel_id = result.data.chat_channel_id;
-        const playlist = result.data.playlist[0]
-        addPlaylistItem(playlist.id, playlist.ruleset_id, playlist.beatmap_id, playlist.required_mods, playlist.allowed_mods, playlist.freestyle, playlist.was_played)
-        playlistItems[playlist.id] = playlist
-
-        document.getElementById('cur-match-type').textContent = result.data.state.type
+        room.updateUI()
     }
 })
 
@@ -981,21 +593,10 @@ document.getElementById('join-room-btn').addEventListener('click', async () => {
     const roomId = int('join-room-id')
     const result = await osu.JoinRoom(roomId)
     if (result.success) {
-        showRoomActions(roomId, result.data.chat_channel_id, result.data.name, result.data.password)
+        room = new Room(result.data)
+        Queue = new EventQueue(room)
         hideRoomCreation()
-        connected = true
-        chat_channel_id = result.data.chat_channel_id;
-        const playlists = result.data.playlist
-        for (const playlist of playlists) {
-            addPlaylistItem(playlist.id, playlist.ruleset_id, playlist.beatmap_id, playlist.required_mods, playlist.allowed_mods, playlist.freestyle, playlist.was_played)
-            playlistItems[playlist.id] = playlist
-        }
-        for (const p of result.data.players) {
-            let user = await GetUser(p.user_id)
-            addPlayer(p.user_id, p.status, user.user.username, p.team ?? "none")
-        }
-
-        document.getElementById('cur-match-type').textContent = result.data.state.type
+        room.updateUI()
     }
 })
 
@@ -1007,13 +608,13 @@ document.getElementById('change-settings-btn').addEventListener('click', async (
     settings.type = document.getElementsByName("match_type")[0].checked ? "head_to_head" : "team_versus";
     if (name) settings.name = name
     if (password) settings.password = password
-    const result = await osu.ChangeRoomSettings(currentRoomId, settings)
+    const result = await osu.ChangeRoomSettings(room.id, settings)
     hideSettingsDropdown()
 })
 
 // ── Match Control ──────────────────────────────────────────────────────────
 document.getElementById('start-match-btn').addEventListener('click', async () => {
-    const result = await osu.StartMatch(currentRoomId, {
+    const result = await osu.StartMatch(room.id, {
         'countdown': int('start-match-seconds')
     })
 })
@@ -1024,7 +625,7 @@ document.getElementById('timer-btn').addEventListener('click', async () => {
 })
 
 document.getElementById('stop-countdown-btn').addEventListener('click', async () => {
-    const result = await osu.StopMatchCountdown(currentRoomId)
+    const result = await osu.StopMatchCountdown(room.id)
     if (countdown_id != null) {
         clearInterval(countdown_id)
         addSystemMsg("Countdown aborted")
@@ -1033,26 +634,18 @@ document.getElementById('stop-countdown-btn').addEventListener('click', async ()
 })
 
 document.getElementById('abort-match-btn').addEventListener('click', async () => {
-    const result = await osu.AbortMatch(currentRoomId)
+    const result = await osu.AbortMatch(room.id)
 })
 
 document.getElementById('close-room-btn').addEventListener('click', async () => {
-    const ok = await confirm(
+    const ok = await confirmUI(
         'Close Room',
-        'Are you sure you want to permanently close room ' + currentRoomId + '? This cannot be undone.'
+        'Are you sure you want to permanently close room ' + room.id + '? This cannot be undone.'
     )
     if (!ok) return
-    const result = await osu.CloseRoom(currentRoomId)
+    const result = await osu.CloseRoom(room.id)
     if (result.success) {
-        hideRoomActions() // copied around, TODO generalize
-        showRoomCreation()
-        connected = false
-        players = {}
-        playlistItems = {}
-        refreshPlaylistItems()
-        chat_channel_id = ""
-
-        document.getElementById("chat-messages").innerHTML = '<div id="no-messages" class="text-gray-500 dark:text-gray-400 text-sm italic">No messages yet...</div>'
+        room.close()
     } else {
         console.log("How the hell")
     }
@@ -1066,8 +659,8 @@ document.getElementById('chat-send-btn').addEventListener('click', async () => {
         document.getElementById('chat-input').value = ''
         return;
     }
-    if (chat_channel_id != "" && str('chat-input').trim()) {
-        window.api.api.SendMessage(chat_channel_id, str('chat-input'))
+    if (room.chat_channel_id != "" && str('chat-input').trim()) {
+        window.api.api.SendMessage(room.chat_channel_id, str('chat-input'))
         document.getElementById('chat-input').value = ''
     } else {
         console.log("not sending msg")
@@ -1090,10 +683,10 @@ document.getElementById('ping-btn').addEventListener('click', async () => {
 function commandHandler(message) {
     const commands = {
         "/roll": (max) => {
-            osu.Roll(currentRoomId, {max: parseInt(max)})
+            osu.Roll(room.id, {max: parseInt(max)})
         },
         "!mp": (args) => {
-            cmdRunner(args.shift(), ...args)
+            cmdRunner(room.id, args.shift(), ...args)
         }
     }
     commands["!roll"] = commands["/roll"] // same as bancho
@@ -1106,142 +699,12 @@ function commandHandler(message) {
 }
 
 // ── Event listeners ────────────────────────────────────────────────────────
-window.api.on.UserJoined(async info => {
-    let resolveFn;
-    const promise = new Promise(resolve => resolveFn = resolve);
-    addingUser.set(info.user_id, promise)
-    const user = await GetUser(info.user_id, true)
-    console.log(user.user.username, "has joined!!")
-    addPlayer(info.user_id, "idle", user.user.username, "none")
-    players[info.user_id].status = "idle"
-    players[info.user_id].team = "none"
-    resolveFn()
-})
-window.api.on.UserLeft(info => {
-    removePlayer(info.user_id)
-})
-window.api.on.UserKicked(info => {
-    console.log(me)
-    console.log(me.id)
-    if (info.kicked_user_id == me.id) {
-        hideRoomActions()
-        showRoomCreation()
-        connected = false
-        players = {}
-        playlistItems = {}
-        refreshPlaylistItems()
-        chat_channel_id = ""
-
-        document.getElementById("chat-messages").innerHTML = '<div id="no-messages" class="text-gray-500 dark:text-gray-400 text-sm italic">No messages yet...</div>'
-    }
-    removePlayer(info.kicked_user_id)
-})
-window.api.on.RoomSettingsChanged(info => {
-    room_name = info.name
-    password = info.password
-    let match_type = info.type
-    document.getElementById('room-name').textContent = room_name
-    document.getElementById('cur-match-type').textContent = match_type
-    document.getElementById('settings-name').value = room_name
-    document.getElementById('settings-password').value = password
-    document.getElementsByName("match_type")[0].checked = match_type == "head_to_head"
-    document.getElementsByName("match_type")[1].checked = match_type != "head_to_head"
-
-})
-
-window.api.on.MatchStateChanged(info => {
-    const locked = info.state.locked
-    const type = info.state.type
-    document.getElementById('toggle-lock-btn').textContent = locked ? "Locked" : "Unlocked"
-    if (type) document.getElementById('cur-match-type').textContent = type
-    console.log("wa",type)
-})
-
-window.api.on.PlaylistItemAdded(info => {
-    const data = info.playlist_item
-    if (data.was_played) {
-        removePlaylistItem(data.id)
-        delete playlistItems[data.id]
-    } else {
-        addPlaylistItem(data.id, data.ruleset_id, data.beatmap_id, data.required_mods, data.allowed_mods, data.freestyle, data.was_played)
-        playlistItems[data.id] =data
-    }
-})
-window.api.on.PlaylistItemChanged(info => {
-    const data = info.playlist_item
-    const playlist_id = data.id
-    //const playlist = document.querySelector(`[class~="${playlist_id}"]`)
-    if (data.was_played) {
-        removePlaylistItem(data.id)
-        delete playlistItems[data.id]
-    } else {
-        Object.keys(data).forEach(key => {
-            playlistItems[playlist_id][key] = data[key]
-        })
-    }
-    refreshPlaylistItems()
-})
-window.api.on.PlaylistItemRemoved(info => {
-    delete playlistItems[info.playlist_item_id]
-    refreshPlaylistItems()
-})
-window.api.on.UserStatusChanged(info => {
-    const user_id = info.user_id
-    const playerDiv = document.querySelector(`[data-user_id="${user_id}"]`)
-    playerDiv.querySelector(".player-status").textContent = info.status
-    players[user_id].status = info.status
-})
-
-window.api.on.UserModsChanged(info => { // TODO: check if when playlistItem changes/removes if user mods get reset
-    const mods = info.mods
-    const user_id = info.user_id
-    const playerDiv = document.querySelector(`[data-user_id="${user_id}"]`)
-    let mod_str = mods.map(item => item.acronym).join(" ");
-    playerDiv.querySelector(".player-mods").textContent = mod_str ? mod_str : "N/A"
-    addVerboseMods(user_id, mods)
-    players[user_id].mods = mods
-})
-
-window.api.on.UserStyleChanged(info => {
-    // idk man if your tourmament has freestyle you have bigger problems
-    // TODO fix this i guess
-})
-
-window.api.on.UserTeamChanged(async info => {
-    const user_id = info.user_id; // TODO this breaks if the JoinUser isn't done yet
-    if (addingUser.has(user_id)) {
-        await addingUser.get(user_id)
-    }
-    const user_UI = document.querySelector(`[data-user_id="${user_id}"]`).querySelector(".player-team")
-    console.log(user_id)
-    console.log(user_UI)
-    user_UI.classList.remove("team-none", "team-red", "team-blue")
-    user_UI.classList.add("team-" + info.team) // also TODO am i changing the player's team in the array
-})
-window.api.on.CountdownStarted(info => {
-    //document.getElementById('cur-match-countdown').textContent = info.seconds
-})
-window.api.on.CountdownStopped(info => {
-    //document.getElementById('cur-match-countdown').textContent = "-"
-})
-window.api.on.MatchStarted(info => {
-    document.getElementById('cur-match-status').textContent = "Playing"
-})
-window.api.on.MatchAborted(info => {
-    document.getElementById('cur-match-status').textContent = "Aborted"
-})
 window.api.on.MatchCompleted(info => {
-    document.getElementById('cur-match-status').textContent = "Idle"
-    addScore(currentRoomId, info.playlist_item_id)
-})
-
-window.api.on.RollCompleted(async info => {
-    let user = await GetUser(info.user_id)
-    addSystemMsg(`${user.user.username} rolled ${info.result}/${info.max}.`)
+    addScore(room.id, info.playlist_item_id)
 })
 
 window.api.api.onChatMessage(async buffer => {
-    if (chat_channel_id == "") return;
+    if (!room?.chat_channel_id) return;
     const data = JSON.parse(buffer)
     if (data.event != "chat.message.new") {
         console.log(data)
@@ -1249,10 +712,10 @@ window.api.api.onChatMessage(async buffer => {
     };
     const messages = data.data.messages
     for (const msg of messages) {
-        if (msg.channel_id == chat_channel_id) {
+        if (msg.channel_id == room.chat_channel_id) {
             //console.log("ohmygah")
             console.log(msg.sender_id, msg.content)
-            let user = (await GetUser(msg.sender_id)).user
+            let user = (await room.GetUser(msg.sender_id)).user
             addChatMsg(msg.content, user.username, user.avatar_url)
             //if (!commandHandler(user.username, msg.content)) addChatMsg(msg.content, user.username, user.avatar_url)
         }
@@ -1261,8 +724,7 @@ window.api.api.onChatMessage(async buffer => {
 
 // just for personal use of testing
 window.osu = osu
-window.players = () => {return players}
-window.other_players = () => {return other_players}
 window.debugMode = () => debugMode()
-window.playlistItems = () => {return playlistItems}
-window.addVerboseMods = () => {return addVerboseMods}
+window.ircStyleUsername = (str) => {return ircStyleUsername(str)}
+window.MODS = () => {return MODS};
+window.room = () => {return room}
