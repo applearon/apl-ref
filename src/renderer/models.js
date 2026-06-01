@@ -35,7 +35,7 @@ export class Room {
         }
         this.players = {}
         this.refs = {}
-        this.player_slots = resp.players.map(x => x.user_id) // the ordering
+        this.player_slots = []
         for (const ref of resp.referees) {
             this.GetUser(ref.user_id).then(() => {
                 //this.refs[ref.user_id] = u
@@ -48,11 +48,14 @@ export class Room {
                 this.players[p.user_id].status = p.status
                 this.players[p.user_id].style = p.style
                 this.players[p.user_id].mods = p.mods
+                this.player_slots.push(p.user_id) // slots/ordering
+                // TODO: maybe there's a cleaner way to do this?
+                // since it gets the stuff too slowly so yeah
+                this.updateUI()
             })
         }
         this.type = resp.state.type ?? "head_to_head"
         this.locked = resp.state.locked ?? false
-        
 
         // "playing", "idle", etc
         this.status = "Idle"

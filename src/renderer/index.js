@@ -727,3 +727,4 @@ window.osu = osu
 window.debugMode = () => debugMode()
 window.ircStyleUsername = (str) => {return ircStyleUsername(str)}
 window.MODS = () => {return MODS};
+window.room = () => {return room}
