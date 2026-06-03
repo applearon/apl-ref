@@ -35,9 +35,12 @@ export class Room {
         }
         this.players = {}
         this.refs = {}
-        this.player_slots = []
+        this.max_participants = resp.state.slots?.length ?? 0;
+        this.player_slots = resp.state.slots ?? []
+
         for (const ref of resp.referees) {
             this.GetUser(ref.user_id).then(() => {
+                this.updateUI()
                 //this.refs[ref.user_id] = u
             })
         }
@@ -48,7 +51,7 @@ export class Room {
                 this.players[p.user_id].status = p.status
                 this.players[p.user_id].style = p.style
                 this.players[p.user_id].mods = p.mods
-                this.player_slots.push(p.user_id) // slots/ordering
+                if (this.max_participants == 0 ) this.player_slots.push(p.user_id)
                 // TODO: maybe there's a cleaner way to do this?
                 // since it gets the stuff too slowly so yeah
                 this.updateUI()
@@ -72,7 +75,7 @@ export class Room {
         } else {
             console.log("grabbing new player!!", user_id, normal)
             user = (await window.api.api.GetUser(user_id)).data
-            let ret = new User(user.id, user, null, [], null, null)
+            let ret = new User(user.id, user, "none", [], null, normal ? null : "referee")
             if (normal) this.players[user.id] = ret
             if (!normal) this.refs[user.id] = ret
             console.log(ret)
@@ -100,8 +103,9 @@ export class Room {
     }
 
     // UI Helpers and stuff
-    #addPlayer(user_id, player_status, name, team) {
+    #addPlayer(user_id, player_status, name, team, is_ref) {
         // "idle", "ready", "playing", "finished_play", "spectating"
+        if (is_ref) team = "none"
         const team_class = "team-" + team.toLowerCase() // only red and blue or none
         const template = document.getElementById("player-item")
         const clone = template.content.cloneNode(true);
@@ -110,7 +114,7 @@ export class Room {
         const teamSpan = clone.querySelector(".player-team")
         teamSpan.classList.add(team_class)
         clone.getElementById("player-mods").textContent = "N/A"
-        teamSpan.addEventListener("click", async () => {
+        if (!is_ref) teamSpan.addEventListener("click", async () => {
             if(this.players[user_id].team == "none") return;
             // hi if this is causing problems just comment it
             // it stops it from erroring of changing team when it's head-to-head
@@ -124,7 +128,7 @@ export class Room {
 
         clone.querySelector(".player-item").dataset.user_id =user_id
         
-
+        
         const kickBtn = clone.querySelector(".kick-btn")
         kickBtn.addEventListener("click", async () => {
             const confirmed = await confirmUI("Kick Player", "Are you sure you want to kick " + name + "?")
@@ -260,12 +264,18 @@ export class Room {
         console.log("Updating UI")
         document.getElementById("player-list").innerHTML = ''
         for (const pid of this.player_slots) { // ordered properly
-            const player = this.players[pid]
-            this.#addPlayer(player.id, player.status, player.user.username, player.team)
-            const playerDiv = document.querySelector(`[data-user_id="${player.id}"]`)
-            let mod_str = player.mods.map(item => item.acronym).join(" ")
-            playerDiv.querySelector(".player-mods").textContent = mod_str ? mod_str : "N/A"
-            this.#addVerboseMods(player.id, player.mods)
+            const player = this.players[pid] ?? this.refs[pid]
+            if (!pid || !player) { // empty slot
+                const template = document.getElementById("empty-slot")
+                const clone = template.content.cloneNode(true);
+                document.getElementById("player-list").appendChild(clone)
+            } else {
+                this.#addPlayer(player.id, player.status, player.user.username, player.team)
+                const playerDiv = document.querySelector(`[data-user_id="${player.id}"]`)
+                let mod_str = player.mods.map(item => item.acronym).join(" ")
+                playerDiv.querySelector(".player-mods").textContent = mod_str ? mod_str : "N/A"
+                this.#addVerboseMods(player.id, player.mods)
+            }
         }
 
         // Room Settings
@@ -343,11 +353,11 @@ export class EventQueue {
                 //addPlayer(info.user_id, "idle", user.user.username, "none")
                 this.room.players[data.user_id].status = "idle"
                 this.room.players[data.user_id].team = "none"
-                this.room.player_slots.push(data.user_id)
+                if (!this.room.max_participants) this.room.player_slots.push(data.user_id)
             } break;
             case "UserLeft": {
                 delete this.room.players[data.user_id]
-                this.room.player_slots = this.room.player_slots.filter(x => x != data.user_id)
+                if (!this.room.max_participants) this.room.player_slots = this.room.player_slots.filter(x => x != data.user_id)
             } break;
             case "UserKicked": {
                 if (data.kicked_user_id == window.me.id) {
@@ -355,7 +365,7 @@ export class EventQueue {
                     // TODO: make sure this works
                 }
                 delete this.room.players[data.kicked_user_id]
-                this.room.player_slots = this.room.player_slots.filter(x => x != data.kicked_user_id)
+                if (!this.room.max_participants) this.room.player_slots = this.room.player_slots.filter(x => x != data.kicked_user_id)
             } break;
             case "RoomSettingsChanged": {
                 this.room.name = data.name
@@ -365,6 +375,7 @@ export class EventQueue {
             case "MatchStateChanged": {
                 this.room.locked = data.state.locked;
                 this.room.type = data.state.type
+                if (data.state.slots) this.room.player_slots = data.state.slots
             } break;
             case "PlaylistItemAdded": {
                 if (data.playlist_item.was_played) {

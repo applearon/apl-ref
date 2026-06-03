@@ -579,7 +579,8 @@ document.getElementById('make-room-btn').addEventListener('click', async () => {
     const result = await osu.MakeRoom({
         ruleset_id: int('make-ruleset-id'),
         beatmap_id: int('make-beatmap-id'),
-        name: str('make-room-name')
+        name: str('make-room-name'),
+        max_participants: Object.is(int('make-room-max-participants'), NaN) ? 0 : int('make-room-max-participants')
     })
     if (result.success && result.data) {
         room = new Room(result.data)
