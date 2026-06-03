@@ -283,6 +283,7 @@ export class Room {
         document.getElementById('cur-match-type').textContent = this.type
         document.getElementById('settings-name').value = this.name
         document.getElementById('settings-password').value = this.password
+        document.getElementById('settings-maximum-participants').value = this.max_participants
         document.getElementsByName("match_type")[0].checked = this.type == "head_to_head"
         document.getElementsByName("match_type")[1].checked = this.type != "head_to_head"
         
@@ -371,6 +372,8 @@ export class EventQueue {
                 this.room.name = data.name
                 this.room.password = data.password
                 this.room.type = data.type
+                this.room.max_participants = data.max_participants
+                if (data.max_participants == null) this.room.player_slots = this.room.player_slots.filter(x => x != null)
             } break;
             case "MatchStateChanged": {
                 this.room.locked = data.state.locked;

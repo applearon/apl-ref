@@ -53,11 +53,15 @@ async function cmdRunner(room_id, cmd, ...args) {
         "invite": async () => {return osu.InvitePlayer(room_id, await ircStyleUsername(args[0]))},
         "lock": () => {return osu.SetLockState(room_id, {locked: true})},
         "unlock": () => {return osu.SetLockState(room_id, {locked: false})},
-        "set": () => {return osu.ChangeRoomSettings(room_id, {type: args[0] == 0 ? "head_to_head" : "team_versus"})},
+        "set": () => {
+            let size = args[2] ?? args[1] // scoremode doesn't exist yet bleh
+            if (size) size = parseInt(size)
+            return osu.ChangeRoomSettings(room_id, {type: args[0] == 0 ? "head_to_head" : "team_versus", max_participants: size})
+        },
         "start": () => {return osu.StartMatch(room_id, {countdown: parseInt(args[0])})},
         "abort": () => {return osu.AbortMatch(room_id)},
         "team": async () => {return osu.MoveUser(room_id, {user_id: await ircStyleUsername(args[0]), team: args[1]})},
-        "move": () => {return addSystemMsg("Unimplemented Command")},
+        "move": async () => {return osu.MoveUser(room_id, {user_id: await ircStyleUsername(args[0]), slot: parseInt(args[1])-1})},
         "map": () => {return osu.EditCurrentPlaylistItem(room_id, {beatmap_id: parseInt(args[0]), ruleset_id: parseInt(args[1]) ?? 0 })},
         "mods": () => {return osu.EditCurrentPlaylistItem(room_id, handleModChange(args))},
         "allowed_mods": () => {
@@ -274,6 +278,8 @@ function debugMode() { // this is kinda useless now but wtvs
     document.getElementById('room-setup').classList.remove('hidden')
     const ping = document.getElementById("debug-menu")
     ping.classList.add('visible')
+    document.getElementById('navbar-room-controls').classList.add('visible')
+    document.getElementById('settings-dropdown').classList.add('visible')
 }
 
 function addChatMsg(msg, username, pfp) {
@@ -606,7 +612,10 @@ document.getElementById('change-settings-btn').addEventListener('click', async (
     const settings = {}
     const name = str('settings-name')
     const password = str('settings-password')
+    let max_participants = int('settings-maximum-participants')
+    if (Object.is(max_participants), NaN) max_participants = 0
     settings.type = document.getElementsByName("match_type")[0].checked ? "head_to_head" : "team_versus";
+    settings.max_participants = max_participants
     if (name) settings.name = name
     if (password) settings.password = password
     const result = await osu.ChangeRoomSettings(room.id, settings)
