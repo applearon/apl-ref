@@ -2,6 +2,10 @@
 
 import { User, Event, EventQueue, Room } from "./models.js"
 import { idFromUsername, osu, logEvent, MODS, addSystemMsg, confirmUI, log } from "./utils.js"
+
+window.console.error = (...args) => {
+    log.error(args.join(', '))
+}
 const themeToggle = document.getElementById('theme-toggle')
 
 function updateThemeIcon() {

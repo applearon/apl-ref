@@ -27,6 +27,9 @@ function createMainWindow() {
         },
         icon: path.join(__dirname, '..', '..', 'assets', 'aplreflogo.png')
     })
+    // TODO: if someone wants to make this work on macOS go ahead
+    if (process.platform !== 'darwin' && app.isPackaged) mainWindow.removeMenu()
+
     mainWindow.loadFile(path.join(__dirname, '..', 'renderer', 'index.html'))
 }
 
@@ -81,7 +84,6 @@ async function initializeApp(accessToken) {
     app.on('window-all-closed', async () => {
         await cleanup()
     })
-
     refereeClient = new RefereeClient(SPECTATOR_SERVER_URL, accessToken, sendToRenderer)
 
     try {
@@ -114,29 +116,29 @@ function start() {
     })
     //app.commandLine.appendSwitch('enable-features', 'OverlayScrollbar')
     app.whenReady().then(async () => {
+        await configure({
+            sinks: {
+                console: getConsoleSink(),
+                file: getFileSink(LOG_PATH, {
+                    lazy: true,
+                    bufferSize: 8192,
+                    flushInterval: 5000,
+                    nonBlocking: true,
+                })
+            },
+            loggers: [
+                { category : ["logtape", "meta"], lowestLevel: "warning", sinks : ["console"] },
+                { category: "apl-ref", lowestLevel: "debug", sinks: ["file"] }
+            ]
+        });
+        const logger  = getLogger (["apl-ref"]);
         try {
-            await configure({
-                sinks: {
-                    console: getConsoleSink(),
-                    file: getFileSink(LOG_PATH, {
-                        lazy: true,
-                        bufferSize: 8192,
-                        flushInterval: 5000,
-                        nonBlocking: true,
-                    })
-                },
-                loggers: [
-                    { category : ["logtape", "meta"], lowestLevel: "warning", sinks : ["console"] },
-                    { category: "apl-ref", lowestLevel: "debug", sinks: ["console", "file"] }
-                ]
-            });
-            const logger  = getLogger (["apl-ref"]);
             logger.info("===== new session started =====")
             const accessToken = await getAccessToken(createLoginWindow, createConfigPopup)
             logger.debug("accessToken obtained")
             await initializeApp(accessToken)
         } catch (err) {
-            console.error('Failed to authenticate:', err)
+            logger.error('Failed to authenticate:', err)
             setTimeout(() => app.quit(), 500)
         }
     })
