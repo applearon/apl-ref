@@ -3,6 +3,7 @@ const { WebSocket } = require('ws')
 const { CMDS_SET } = require('../referee/commands')
 const { EVENTS } = require('../referee/events')
 const { version } = require('../../package.json')
+const { getLogger } = require("@logtape/logtape")
 const IS_PROD = process.env.DEV_SERVER == null
 const  OSU_SERVER = IS_PROD ? "osu.ppy.sh" : "dev.ppy.sh"
 
@@ -59,6 +60,10 @@ function setupIpcHandlers(getRefereeClient) {
     CMDS_SET.forEach(cmd => {
         ipcMain.handle(cmd, genericHandler(getRefereeClient, cmd));
     })
+    ipcMain.handle('Log', createQueryHandler(getRefereeClient, (client, type, text) => {
+        const logger = getLogger(["apl-ref", "web"]);
+        return logger[type](text)
+    }))
     ipcMain.handle('GetUser', createQueryHandler(getRefereeClient, (client, user_id) => {
         const accessToken = client.accessToken;
         const url = new URL(`https://${OSU_SERVER}/api/v2/users/${user_id}/osu`);

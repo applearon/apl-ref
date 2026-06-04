@@ -97,7 +97,12 @@ export function confirmUI(title, body) {
     })
 }
 
-
+const log = {}
+const modes = ['debug', 'info', 'warn', 'error']
+modes.forEach(x => log[x] = (text) => {
+    window.api.api.Log(x, text)
+    console.log(x + ":", text)
+})
 let objs = Object.entries(window.api.send)
 let osu = {}
 for (const cmd of objs) {
@@ -112,4 +117,4 @@ fetch('mods.json').then(mod_res => {
     mod_res.json().then(mods => MODS = mods)
 })
 
-export { osu, MODS }
+export { osu, MODS, log }

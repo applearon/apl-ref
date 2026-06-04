@@ -3,6 +3,13 @@ const path = require('path')
 const { RefereeClient, SPECTATOR_SERVER_URL } = require('../referee')
 const { setupIpcHandlers, setupWSEvents } = require('./ipc')
 const { getAccessToken } = require('../auth')
+const { configure, getConsoleSink, getLogger } = require("@logtape/logtape")
+const { getFileSink } = require("@logtape/file");
+
+const fs = require('fs')
+const userDataPath = app.getPath('userData');
+
+const LOG_PATH = path.join(userDataPath, 'apl-ref.log')
 
 let mainWindow = null
 let refereeClient = null
@@ -108,7 +115,25 @@ function start() {
     //app.commandLine.appendSwitch('enable-features', 'OverlayScrollbar')
     app.whenReady().then(async () => {
         try {
+            await configure({
+                sinks: {
+                    console: getConsoleSink(),
+                    file: getFileSink(LOG_PATH, {
+                        lazy: true,
+                        bufferSize: 8192,
+                        flushInterval: 5000,
+                        nonBlocking: true,
+                    })
+                },
+                loggers: [
+                    { category : ["logtape", "meta"], lowestLevel: "warning", sinks : ["console"] },
+                    { category: "apl-ref", lowestLevel: "debug", sinks: ["console", "file"] }
+                ]
+            });
+            const logger  = getLogger (["apl-ref"]);
+            logger.info("===== new session started =====")
             const accessToken = await getAccessToken(createLoginWindow, createConfigPopup)
+            logger.debug("accessToken obtained")
             await initializeApp(accessToken)
         } catch (err) {
             console.error('Failed to authenticate:', err)

@@ -1,7 +1,7 @@
 // ── Theme Toggle ────────────────────────────────────────────────────────────
 
 import { User, Event, EventQueue, Room } from "./models.js"
-import { idFromUsername, osu, logEvent, MODS, addSystemMsg, confirmUI } from "./utils.js"
+import { idFromUsername, osu, logEvent, MODS, addSystemMsg, confirmUI, log } from "./utils.js"
 const themeToggle = document.getElementById('theme-toggle')
 
 function updateThemeIcon() {
@@ -738,3 +738,4 @@ window.debugMode = () => debugMode()
 window.ircStyleUsername = (str) => {return ircStyleUsername(str)}
 window.MODS = () => {return MODS};
 window.room = () => {return room}
+window.log = log

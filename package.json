@@ -32,6 +32,8 @@
     "tailwindcss": "^4.2.1"
   },
   "dependencies": {
+    "@logtape/file": "^2.1.1",
+    "@logtape/logtape": "^2.1.1",
     "@microsoft/signalr": "^10.0.0",
     "@tailwindcss/cli": "^4.2.1",
     "electron-squirrel-startup": "^1.0.1",
