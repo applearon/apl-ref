@@ -62,7 +62,7 @@ function setupIpcHandlers(getRefereeClient) {
     })
     ipcMain.handle('Log', createQueryHandler(getRefereeClient, (client, type, text) => {
         const logger = getLogger(["apl-ref", "web"]);
-        return logger[type](text)
+        return logger[type]("{text}", {text})
     }))
     ipcMain.handle('GetUser', createQueryHandler(getRefereeClient, (client, user_id) => {
         const accessToken = client.accessToken;

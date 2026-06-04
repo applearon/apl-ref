@@ -375,7 +375,7 @@ async function addScore(room_id, playlist_id) {
     scoreMode(head_to_head);
     //const addFunc = head_to_head ? addSoloScore : addTeamSoloScore
     let scores = (await window.api.api.GetScores(room_id, playlist_id)).data
-    console.log(`Got scores from room ${room_id} and playlist ${playlist_id}`)
+    log.info(`Got scores from room ${room_id} and playlist ${playlist_id}`)
     console.log(scores)
     if (scores.error != null) {
         logEvent('GetScores', scores)
@@ -714,10 +714,12 @@ window.api.on.MatchCompleted(info => {
 })
 
 window.api.api.onChatMessage(async buffer => {
+    // need this for debugging because i suspect the problems are caused *before* making a room
+    log.info("Chat Event:" + JSON.stringify(data))
     if (!room?.chat_channel_id) return;
     const data = JSON.parse(buffer)
     if (data.event != "chat.message.new") {
-        console.log(data)
+        log.info("Not message:" + JSON.stringify(data))
         return;
     };
     const messages = data.data.messages

@@ -1,3 +1,10 @@
+const log = {}
+const modes = ['debug', 'info', 'warn', 'error']
+modes.forEach(x => log[x] = (text) => {
+    window.api.api.Log(x, text)
+    console.log(x + ":", text)
+})
+
 export function idFromUsername(username, arr, refs) {
     arr = Object.assign({}, arr, refs)
     let user = Object.keys(arr).find(key => arr[key].user.username == username)
@@ -25,8 +32,8 @@ export async function logEvent(name, data) {
         isRes = true;
     }
     console.log(name, data)
-    const log = document.getElementById('event-log')
-    const placeholder = log.querySelector('.event-placeholder')
+    const log_div = document.getElementById('event-log')
+    const placeholder = log_div.querySelector('.event-placeholder')
     if (placeholder) placeholder.remove()
     const entry = document.createElement('div')
     entry.className = 'event-entry'
@@ -51,7 +58,9 @@ export async function logEvent(name, data) {
     }
     entry.append(time)
     entry.append(logData)
-    log.prepend(entry)
+    log_div.prepend(entry)
+    const str = JSON.stringify(data)
+    log.info(name + ":" + str);
 }
 
 export function addSystemMsg(msg) {
@@ -97,12 +106,6 @@ export function confirmUI(title, body) {
     })
 }
 
-const log = {}
-const modes = ['debug', 'info', 'warn', 'error']
-modes.forEach(x => log[x] = (text) => {
-    window.api.api.Log(x, text)
-    console.log(x + ":", text)
-})
 let objs = Object.entries(window.api.send)
 let osu = {}
 for (const cmd of objs) {
