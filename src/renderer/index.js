@@ -715,7 +715,7 @@ window.api.on.MatchCompleted(info => {
 
 window.api.api.onChatMessage(async buffer => {
     // need this for debugging because i suspect the problems are caused *before* making a room
-    log.info("Chat Event:" + JSON.stringify(data))
+    log.info("Chat Event:" + buffer)
     if (!room?.chat_channel_id) return;
     const data = JSON.parse(buffer)
     if (data.event != "chat.message.new") {
