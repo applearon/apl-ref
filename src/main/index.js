@@ -128,7 +128,7 @@ function start() {
             },
             loggers: [
                 { category : ["logtape", "meta"], lowestLevel: "warning", sinks : ["console"] },
-                { category: "apl-ref", lowestLevel: "debug", sinks: ["file"] }
+                { category: "apl-ref", lowestLevel: "debug", sinks: ["file", "console"] }
             ]
         });
         const logger  = getLogger (["apl-ref"]);
