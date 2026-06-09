@@ -52,6 +52,7 @@ async function ircStyleUsername(str) { // old mode is #14573534 for user id, and
 
 // TODO: double check that these all update the UI (or will call a UI update)
 async function cmdRunner(room_id, cmd, ...args) {
+    const needs_resp = ["invite"]
     const map = { 
         "name": () => {return osu.ChangeRoomSettings(room_id, {name: args.join(' ')})},
         "invite": async () => {return osu.InvitePlayer(room_id, await ircStyleUsername(args[0]))},
@@ -112,7 +113,12 @@ async function cmdRunner(room_id, cmd, ...args) {
         addSystemMsg(`Invalid command: ${cmd}`)
         return false;
     }
-    await map[cmd]()
+    let suc = await map[cmd]()
+    let x = suc.success ? "Succeded" : "Failed"
+    let err = suc.error ?? ""
+    if (needs_resp.includes(cmd) || !suc.success) {
+        addSystemMsg(`Command ${cmd} ${x}. ${err}`)
+    }
 }
 
 function handleModChange(args) {
