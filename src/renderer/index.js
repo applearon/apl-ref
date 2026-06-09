@@ -257,7 +257,7 @@ document.addEventListener('click', (e) => {
 let objs = Object.entries(window.api.on)
 for (const cmd of objs) {
     cmd[1](info => {
-        Queue.add(new Event(cmd[0], info))
+        if (info?.room_id == Queue.room.id) Queue.add(new Event(cmd[0], info))    
         logEvent(cmd[0], info)
     })
 }
