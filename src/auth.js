@@ -155,7 +155,6 @@ function waitForConfig(configWindow) {
         }
 
         ipcMain.handle('SendConfig', (event, client_id, client_secret) => {
-            console.log(client_secret)
             settle(resolve, { client_id, client_secret })
         })
 
