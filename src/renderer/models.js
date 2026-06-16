@@ -401,6 +401,10 @@ export class EventQueue {
             } break;
             case "UserStatusChanged": {
                 this.room.players[data.user_id].status = data.status
+                if (Object.values(this.room.players).every(p => p.status == "ready")) {
+                    // maybe make this not do UI stuff but chat is whatevs rn
+                    addSystemMsg("All Players are ready")
+                }
             } break;
             case "UserModsChanged": {
                 this.room.players[data.user_id].mods = data.mods
