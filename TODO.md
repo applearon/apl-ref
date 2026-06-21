@@ -18,8 +18,9 @@ New Features:
 - resize scores or starting size or something to make it not scroll down when scores are added
     - (make it scroll in its own thing?)
 - Add Map Stats (length, cs, ar, etc) somewhere (maybe only current?)
-
-Bugs:
+- Colours for player state
+- Add !mp settings
+Bugs
 - Getting kicked from a room as a referee doesn't reset the UI (done, needs more testing)
 - still some OK: null kicking around (inviting ref)
 - how do you properly leave a room now lmao (restarting the app i guess...)
@@ -30,6 +31,7 @@ Bugs:
 - Chat is sometimes broken on first run (token doesn't exist yet or something)
     - Maybe with refreshing the token not working??
     - Seems to only happen the first time????
+- addref is broken?
 # 1.0 Blocking Issues
 - Support operating multiple rooms at once
 - Notification sounds
