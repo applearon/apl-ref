@@ -31,7 +31,7 @@ export class Room {
         this.password = resp.password
         this.playlistItems = {}
         for (const item of resp.playlist) {
-            this.playlistItems[item.id] = item
+            if (!item.was_played) this.playlistItems[item.id] = item
         }
         this.players = {}
         this.refs = {}
