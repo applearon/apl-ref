@@ -122,6 +122,7 @@ async function cmdRunner(room_id, cmd, ...args) {
 }
 
 function handleModChange(args) {
+    const mode = room.mode
     const DA_ORDER = [0,2,3,1,4]
     // "FM" and "NM" also
     if (args.length < 1) {
@@ -142,8 +143,7 @@ function handleModChange(args) {
         }
         const mod_acronym = mod.slice(0,2)
         if (mod_acronym.toLowerCase() == "fm") {
-            allowed_mods = MODS[0].Mods.filter(x => x.ValidForMultiplayerAsFreeMod && x.Type != "System" && x.UserPlayable).map(x => {return {acronym: x.Acronym}}) // i dont care anymore
-            // TODO: make this work with other gamemodes
+            allowed_mods = MODS[mode].Mods.filter(x => x.ValidForMultiplayerAsFreeMod && x.Type != "System" && x.UserPlayable).map(x => {return {acronym: x.Acronym}}) // i dont care anymore
             continue
         }
         if (mod_acronym.toLowerCase() == "nm") {
@@ -153,7 +153,7 @@ function handleModChange(args) {
             required_mods.push({acronym: mod}) // no settings
         } else {
             try {
-                const mod_setting_names = MODS[0].Mods.find(x => x.Acronym == mod_acronym).Settings.map(x => x.Name)
+                const mod_setting_names = MODS[mode].Mods.find(x => x.Acronym == mod_acronym).Settings.map(x => x.Name)
                 // ModType.System || !mod.UserPlayable
                 // ValidForMultiplayerAsFreeMod
                 let settings = JSON.parse(mod.slice(2))
@@ -176,7 +176,7 @@ function handleModChange(args) {
     }
     allowed_mods = allowed_mods.filter(x => !required_mods.map(x=> x.acronym).includes(x.acronym))
     let required_mods_lst = required_mods.map(x=> x.acronym)
-    let incompat_lst = [...new Set(MODS[0].Mods.filter(x => required_mods_lst.includes(x.Acronym)).map(x => x.IncompatibleMods).flat(1))]
+    let incompat_lst = [...new Set(MODS[mode].Mods.filter(x => required_mods_lst.includes(x.Acronym)).map(x => x.IncompatibleMods).flat(1))]
     allowed_mods = allowed_mods.filter(x => !incompat_lst.includes(x.acronym))
     console.log(required_mods)
     console.log(allowed_mods)

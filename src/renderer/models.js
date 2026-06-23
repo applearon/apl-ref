@@ -33,6 +33,7 @@ export class Room {
         for (const item of resp.playlist) {
             if (!item.was_played) this.playlistItems[item.id] = item
         }
+        this.mode = this.updateMode()
         this.players = {}
         this.refs = {}
         this.max_participants = resp.state.slots?.length ?? 0;
@@ -65,6 +66,9 @@ export class Room {
         // i really need to think of a better way to do this
         this.editing_playlist_item = 0;
         this.#showRoomActions()
+    }
+    updateMode() {
+        this.mode = Object.values(this.playlistItems).find(x => x.order==0).ruleset_id ?? 0
     }
     async GetUser(user_id, normal) {
         normal = normal ?? false
@@ -213,7 +217,7 @@ export class Room {
         const settings_div = mod_clone.querySelector(".mod-item")
         let mod_name = settings_div.querySelector(".mod-item-name")
         let mod_settings = settings_div.querySelector(".mod-item-settings")
-        const mod_info = MODS[0].Mods.find(x => x.Acronym == mod.acronym)
+        const mod_info = MODS[this.mode].Mods.find(x => x.Acronym == mod.acronym)
         // settings is in the form of {option: number|string|boolean} im pretty sure
         let settings_text = []
         for (const setting of Object.entries(mod.settings)) {
@@ -437,6 +441,7 @@ export class EventQueue {
                 addSystemMsg(`${user.user.username} rolled ${data.result}/${data.max}`)
             } break;
             }
+            this.room.updateMode()
             this.room.updateUI()
         }
         this.processing = false;
