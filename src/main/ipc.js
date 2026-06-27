@@ -160,6 +160,10 @@ function setupIpcHandlers(getRefereeClient) {
         }).then(response => response.json());
     }))
 
+    ipcMain.handle('CloseWS', createQueryHandler(getRefereeClient, (client) => {
+        return client.ws_close();
+    }))
+
     ipcMain.handle('GetConnectionStatus', createQueryHandler(getRefereeClient, (client) => {
         return { connected: client?.connected || false }
     }))
@@ -171,11 +175,14 @@ function setupWSEvents(accessToken, sendFunc) {
     const headers = { Authorization: `Bearer ${accessToken}`};
     const url = IS_PROD ? "wss://notify.ppy.sh" : "wss://dev.ppy.sh/home/notifications/feed"
     let ws;
+    let reconnectTimer = null
+    let attempts = 0;
     function connect() {
         ws = new WebSocket(url, [], { headers });
         ws.on('open', () => {
             ws.send(JSON.stringify({ event: 'chat.start' }));
             logger.info("Opened!")
+            attempts = 0
         })
         ws.on('message', (buffer) => {
             //console.log(buffer.toString())
@@ -183,12 +190,22 @@ function setupWSEvents(accessToken, sendFunc) {
         });
         ws.on('close', (ev) => {
             logger.error("Closed: {ev}", ev)
+            const delay = Math.min(1000 * (2 ** attempts), 16_000) // exponential backoff i think, max 16sec
+            attempts += 1
+            logger.info(`Attempting reconnection in ${delay}ms..`)
+            clearTimeout(reconnectTimer);
+            reconnectTimer = setTimeout(connect, delay)
+
         })
         ws.on('error', (ev) => {
             logger.error("Error: {ev}", ev)
+            ws.close() // i assume i need this??
         })
     }
     connect()
+    return () => {
+        ws.close()
+    }
 }
 
 module.exports = { setupIpcHandlers, createHandler, createQueryHandler, setupWSEvents }

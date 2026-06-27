@@ -6,13 +6,14 @@ const IS_PROD = process.env.DEV_SERVER == null
 const SPECTATOR_SERVER_URL = IS_PROD ? 'https://spectator.ppy.sh' : 'https://dev.ppy.sh/'
 
 class RefereeClient {
-    constructor(url = SPECTATOR_SERVER_URL, accessToken = null, sendToRenderer) {
+    constructor(url = SPECTATOR_SERVER_URL, accessToken = null, sendToRenderer, ws_close) {
         this.connection = null
         this.url = url
         this.connected = false
         this.callbacks = {}
         this.accessToken = accessToken
         this.sendToRenderer = sendToRenderer
+        this.ws_close = ws_close
     }
 
     async connect() {

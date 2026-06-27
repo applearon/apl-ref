@@ -29,7 +29,10 @@ ipcRenderer.invoke('get-api-data').then(API_DATA => {
             JoinChannel: (channel_id, username) => ipcRenderer.invoke('JoinChannel', channel_id, username),
             GetBeatmap: (beatmap_id) => ipcRenderer.invoke('GetBeatmap', beatmap_id),
             GetScores: (room_id, playlist_id) => ipcRenderer.invoke('GetScores', room_id, playlist_id),
-            Log: (type, text) => ipcRenderer.invoke('Log', type, text)
+            Log: (type, text) => ipcRenderer.invoke('Log', type, text),
+        },
+        dev: { // dev stuff
+            CloseWS: () => ipcRenderer.invoke('CloseWS')
         },
         config: {
             SendConfig: (client_id, client_secret) => ipcRenderer.invoke('SendConfig', client_id, client_secret),
