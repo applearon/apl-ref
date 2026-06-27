@@ -117,20 +117,6 @@ function setupIpcHandlers(getRefereeClient) {
             body: JSON.stringify(body),
         }).then(response => response.json());
     }))
-    ipcMain.handle('JoinChannel', createQueryHandler(getRefereeClient, (client, channel_id, username) => {
-        const accessToken = client.accessToken;
-        const url = new URL(`https://${OSU_SERVER}/api/v2/chat/channels/${channel_id}/users/${username}`);
-        const headers = {
-            "Content-Type": "application/json",
-            "Accept": "application/json",
-            Authorization: `Bearer ${accessToken}`,
-        }
-        
-        return fetch(url, {
-            method: "PUT",
-            headers,
-        }).then(response => response.json());
-    }))
     ipcMain.handle('GetBeatmap', createQueryHandler(getRefereeClient, (client, beatmap_id) => {
         const accessToken = client.accessToken;
         const url = new URL(`https://${OSU_SERVER}/api/v2/beatmaps/${beatmap_id}`);
