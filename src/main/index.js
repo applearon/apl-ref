@@ -94,7 +94,7 @@ async function initializeApp(accessToken) {
 
     app.on('activate', () => {
         if (BrowserWindow.getAllWindows().length === 0) createMainWindow()
-    }) 
+    })
     setupWSEvents(accessToken, sendToRenderer)
 }
 

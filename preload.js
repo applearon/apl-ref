@@ -26,6 +26,7 @@ ipcRenderer.invoke('get-api-data').then(API_DATA => {
             GetUser: (user_id) => ipcRenderer.invoke('GetUser', user_id),
             GetSelf: () => ipcRenderer.invoke('GetSelf'),
             SendMessage: (channel_id, message) => ipcRenderer.invoke('SendMessage', channel_id, message),
+            JoinChannel: (channel_id, username) => ipcRenderer.invoke('JoinChannel', channel_id, username),
             GetBeatmap: (beatmap_id) => ipcRenderer.invoke('GetBeatmap', beatmap_id),
             GetScores: (room_id, playlist_id) => ipcRenderer.invoke('GetScores', room_id, playlist_id),
             Log: (type, text) => ipcRenderer.invoke('Log', type, text)
