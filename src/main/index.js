@@ -84,7 +84,8 @@ async function initializeApp(accessToken) {
     app.on('window-all-closed', async () => {
         await cleanup()
     })
-    refereeClient = new RefereeClient(SPECTATOR_SERVER_URL, accessToken, sendToRenderer)
+    let ws_close = setupWSEvents(accessToken, sendToRenderer)
+    refereeClient = new RefereeClient(SPECTATOR_SERVER_URL, accessToken, sendToRenderer, ws_close)
 
     try {
         await refereeClient.connect()
@@ -94,8 +95,7 @@ async function initializeApp(accessToken) {
 
     app.on('activate', () => {
         if (BrowserWindow.getAllWindows().length === 0) createMainWindow()
-    }) 
-    setupWSEvents(accessToken, sendToRenderer)
+    })
 }
 
 async function cleanup() {
