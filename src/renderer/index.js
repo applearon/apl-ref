@@ -58,6 +58,7 @@ async function cmdRunner(room_id, cmd, ...args) {
         "invite": async () => {return osu.InvitePlayer(room_id, await ircStyleUsername(args[0]))},
         "lock": () => {return osu.SetLockState(room_id, {locked: true})},
         "unlock": () => {return osu.SetLockState(room_id, {locked: false})},
+        "size": () => {return osu.ChangeRoomSettings(room_id, {max_participants: parseInt(args[0])})},
         "set": () => {
             let size = args[2] ?? args[1] // scoremode doesn't exist yet bleh
             if (size) size = parseInt(size)
