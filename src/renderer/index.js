@@ -34,6 +34,8 @@ window.beatmaps = {}; // global cause like
 // i cant imagine that will cause problems?
 
 let Queue;
+let rooms = {};
+let room_ids = []
 let room;
 
 let countdown_id;
@@ -42,6 +44,22 @@ window.api.api.GetSelf().then (x => {
     window.me = x.data
 })
 
+function switchRoom(id) {
+    if (rooms[id] == undefined) {
+        // room hasn't been joined yet bleh
+        osu.JoinRoom(id).then((result) => {
+            if (result.success) {
+                room = new Room(result.data)
+                rooms[result.data.room_id] = room
+                Queue = new EventQueue(room)
+                hideRoomCreation()
+                room.updateUI()
+            }
+        })
+    }
+    room = rooms[id]
+    room.updateUI()
+}
 
 async function ircStyleUsername(str) { // old mode is #14573534 for user id, and username otherwise
     if (str[0] == '#') {
@@ -100,12 +118,14 @@ async function cmdRunner(room_id, cmd, ...args) {
         "listrefs": () => {return addSystemMsg("Unimplemented")}, // need custom logic
         "close": () => {
             osu.CloseRoom(room.id)
+            let id = room.id;
             room.close()
             room = null
             // drop the queue too, otherwise it keeps a stale room id around and
             // events for the next room get matched against the old one
             Queue = null
 
+            delete rooms[id]
             document.getElementById("chat-messages").innerHTML = '<div id="no-messages" class="text-gray-500 dark:text-gray-400 text-sm italic">No messages yet...</div>'
         },
         "help": () => {
@@ -440,6 +460,27 @@ function slotLimitEdit(id) {
 }
 function str(id) { return document.getElementById(id).value.trim() }
 
+// Refresh Room List
+document.getElementById('refresh-room-list').addEventListener('click', async () => {
+    const rooms_data = await osu.ListRooms()
+    room_ids = rooms_data.data.room_ids
+    document.getElementById("tabs").innerHTML = ""
+    for (let id of room_ids) {
+        addTab(id)
+    }
+})
+
+// tab list
+function addTab(room_id) {
+    const template = document.getElementById("tab-template")
+    const clone = template.content.cloneNode(true);
+    clone.querySelector(".tab-label").textContent = room_id
+    clone.querySelectorAll('*')[0].addEventListener('click', () => {
+        switchRoom(room_id)
+    })
+    document.getElementById("tabs").appendChild(clone)
+}
+
 // ── Add Playlist Modal ───────────────────────────────────────────────────
 const addPlaylistModal = document.getElementById('add-playlist-modal')
 document.getElementById('add-playlist-btn').addEventListener('click', () => {
@@ -626,6 +667,7 @@ document.getElementById('make-room-btn').addEventListener('click', async () => {
     })
     if (result.success && result.data) {
         room = new Room(result.data)
+        rooms[result.data.room_id] = room
         Queue = new EventQueue(room)
         hideRoomCreation()
         room.updateUI()
@@ -637,6 +679,7 @@ document.getElementById('join-room-btn').addEventListener('click', async () => {
     const result = await osu.JoinRoom(roomId)
     if (result.success) {
         room = new Room(result.data)
+        rooms[result.data.room_id] = room
         Queue = new EventQueue(room)
         hideRoomCreation()
         room.updateUI()
@@ -769,6 +812,7 @@ window.api.api.onChatMessage(async buffer => {
             console.log(msg.sender_id, msg.content)
             let user = (await room.GetUser(msg.sender_id)).user
             addChatMsg(msg.content, user.username, user.avatar_url)
+            room.msg_history.push({type: "chat", data: [msg.content, user.username, user.avatar_url]})
             //if (!commandHandler(user.username, msg.content)) addChatMsg(msg.content, user.username, user.avatar_url)
         }
     }
@@ -780,4 +824,7 @@ window.debugMode = () => debugMode()
 window.ircStyleUsername = (str) => {return ircStyleUsername(str)}
 window.MODS = () => {return MODS};
 window.room = () => {return room}
+window.rooms = () => {return rooms}
+window.switchRoom = (id) => {switchRoom(id)}
+window.addTab = (id) => {addTab(id)}
 window.log = log
