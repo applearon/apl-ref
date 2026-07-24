@@ -48,3 +48,7 @@ Bugs
     - Make sure they all align with lazer mp standards
 - Figure out how to determine the proper mod settings order
     - Maybe just check every single one from the docs but that's cursed
+
+what doesn't work: changing anything(???) , chat knowing where it is, closing either room, getting back to the home page (although the concept of a home page doesnt exist yet)
+"Status: Idle" is broken, leaving rooms is broken
+
