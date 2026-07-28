@@ -25,6 +25,7 @@ export class User {
 export class Room {
     // stores all information about a room
     constructor(resp) { // RoomJoinedResponse data 
+        this.active = true // if it's currently showing itself
         this.id = resp.room_id 
         this.chat_channel_id = resp.chat_channel_id
         this.name = resp.name
@@ -401,6 +402,7 @@ export class EventQueue {
 
     async #drain() {
         while (this.arr.length > 0) {
+            console.log("meow")
             const ev = this.arr.shift()
             const data = ev.data
             try {
@@ -488,8 +490,9 @@ export class EventQueue {
                     delete this.room.playlistItems[data.playlist_item_id]
                 } break;
                 case "UserStatusChanged": {
+                    if (this.room.players[data.user_id] == undefined) break;
                     this.room.players[data.user_id].status = data.status
-                    if (Object.values(this.room.players).every(p => p.status == "ready")) {
+                    if (Object.values(this.room.players).every(p => p.status == "ready" || p.status == "referee")) {
                     // maybe make this not do UI stuff but chat is whatevs rn
                         const msg = "All Players are ready"
                         addSystemMsg(msg)
@@ -531,7 +534,7 @@ export class EventQueue {
                 } break;
                 }
                 this.room.updateMode()
-                this.room.updateUI()
+                if (this.room.active) this.room.updateUI()
             } catch (err) {
                 // one bad event shouldnt stop the rest of the queue from moving; just log it
                 console.error(`Failed to handle ${ev.name}:`, err)

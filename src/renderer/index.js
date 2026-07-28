@@ -37,7 +37,7 @@ let Queue;
 let rooms = {};
 let room_ids = []
 let room;
-
+let connected = false;
 let countdown_id;
 
 window.api.api.GetSelf().then (x => {
@@ -650,7 +650,12 @@ const statusText = document.getElementById('status-text')
 
 async function updateStatus() {
     const status = await window.api.GetConnectionStatus()
-    const connected = status.data ? status.data.connected : false
+    let is_connected = status.data ? status.data.connected : false
+    if (is_connected && !connected) {
+        console.log(is_connected,connected, status)
+        osu.ListRooms()
+    }
+    connected = is_connected;
     statusDot.classList.toggle('connected', connected)
     statusText.textContent = connected ? 'Connected' : 'Disconnected'
 }
