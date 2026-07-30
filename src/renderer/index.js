@@ -52,11 +52,14 @@ function switchRoom(id) {
                 rooms[result.data.room_id] = room
                 room.queue = new EventQueue(room)
                 hideRoomCreation()
+                room.showRoomActions()
                 room.updateUI()
             }
         })
     } else {
         room = rooms[id]
+        hideRoomCreation()
+        room.showRoomActions()
         room.updateUI()
     }
 }
@@ -209,16 +212,6 @@ function handleModChange(args) {
         allowed_mods
     }
 }
-// this is the old version that uses bancho-style !mp mods
-//function handleModChange(args) {
-//    // this is so stupid
-//    const fm = args.map((x) => x.toLowerCase()).includes('freemod')
-//    const mods = [ 'hd', 'hr', 'ez', 'fl', 'rx', 'so', 'nf', 'ap' ].map(m => ({acronym: m}))
-//    return {
-//        required_mods: fm ? null : args.map((x) => {return {acronym: x}}),
-//        allowed_mods: fm ? mods : [] // assuming only want normal mods..
-//    }
-//}
 
 // ── UI helpers ──────────────────────────────────────────────────────────────
 
@@ -763,6 +756,15 @@ function commandHandler(message) {
             osu.Roll(room.id, {max: parseInt(max)})
             console.log(room.id)
         },
+        "/savelog": () => {
+            window.api.api.SaveDialog(
+                "Save Chat Logs",
+                `apl!ref ${room.id} - ${new Date().toISOString()}.txt`,
+                room.msg_history.map(
+                    x => `[${x.timestamp}] ${x.type == "chat" ? x.data[1] : "System"}: ${x.type == "chat" ? x.data[0] : x.data}`
+                ).join('\n')
+            )
+        },
         "!mp": (args) => {
             cmdRunner(room.id, args.shift(), ...args)
         }
@@ -798,7 +800,7 @@ window.api.api.onChatMessage(async buffer => {
             console.log(msg.sender_id, msg.content)
             let user = (await room.GetUser(msg.sender_id)).user
             //room.addChatMsg(msg.content, user.username, user.avatar_url)
-            r.msg_history.push({type: "chat", data: [msg.content, user.username, user.avatar_url]})
+            r.msg_history.push({type: "chat", data: [msg.content, user.username, user.avatar_url], timestamp: msg.timestamp})
             room.updateUI() // TODO: remove this line
             //if (!commandHandler(user.username, msg.content)) addChatMsg(msg.content, user.username, user.avatar_url)
         }

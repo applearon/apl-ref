@@ -32,7 +32,7 @@ export class Room {
         this.msg_history = []
         window.api.api.GetChannelMessages(resp.chat_channel_id).then(x => {
             for (let msg of x.data) {
-                this.msg_history.push({type: "chat", data: [msg.content, msg.sender.username, msg.sender.avatar_url]})
+                this.msg_history.push({type: "chat", data: [msg.content, msg.sender.username, msg.sender.avatar_url], timestamp: msg.timestamp})
             }
             this.updateUI()
         })
@@ -91,7 +91,7 @@ export class Room {
         this.status = "Idle"
         // i really need to think of a better way to do this
         this.editing_playlist_item = 0;
-        this.#showRoomActions()
+        this.showRoomActions()
         
     }
     updateMode() {
@@ -120,7 +120,7 @@ export class Room {
         }
     }
 
-    #showRoomActions() {
+    showRoomActions() {
         document.getElementById('room-actions').classList.remove('hidden')
         document.getElementById('room-badge').classList.add('visible')
         document.getElementById('room-chat-badge').classList.add('visible')
@@ -309,7 +309,7 @@ export class Room {
         if (cur == null) verboseMods.appendChild(clone)
     }
     addSystemMsg(msg) {
-        this.msg_history.push({type: "system", data: [msg]})
+        this.msg_history.push({type: "system", data: [msg], timestamp: new Date().toISOString()})
         this.updateUI()
     }
     addChatMsg(msg, username, pfp) {
@@ -538,7 +538,7 @@ export class EventQueue {
                 case "UserStatusChanged": {
                     if (this.room.players[data.user_id] == undefined) break;
                     this.room.players[data.user_id].status = data.status
-                    if (Object.values(this.room.players).every(p => p.status == "ready" || p.status == "referee")) {
+                    if (Object.values(this.room.players).every(p => p.status == "ready" || p.status == "referee" || p.status == "spectating")) {
                         const msg = "All Players are ready"
                         this.room.addSystemMsg(msg)
                     }

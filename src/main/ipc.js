@@ -1,5 +1,6 @@
-const { ipcMain } = require('electron')
+const { ipcMain, dialog } = require('electron')
 const { WebSocket } = require('ws')
+const fs = require('fs')
 const { CMDS_SET } = require('../referee/commands')
 const { EVENTS } = require('../referee/events')
 const { version } = require('../../package.json')
@@ -63,6 +64,11 @@ function setupIpcHandlers(getRefereeClient) {
     ipcMain.handle('Log', createQueryHandler(getRefereeClient, (client, type, text) => {
         const logger = getLogger(["apl-ref", "web"]);
         return logger[type]("{text}", {text})
+    }))
+    ipcMain.handle('SaveDialog', createQueryHandler(getRefereeClient, (client, title, filename, data) => {
+        const file = dialog.showSaveDialogSync({title:title, defaultPath: filename})
+        if (file == '') throw new Error("Cancelled")
+        return fs.writeFileSync(file, data, 'utf8', {flag: 'wx'})
     }))
     ipcMain.handle('GetUser', createQueryHandler(getRefereeClient, (client, user_id) => {
         const accessToken = client.accessToken;

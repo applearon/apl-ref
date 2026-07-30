@@ -30,6 +30,7 @@ ipcRenderer.invoke('get-api-data').then(API_DATA => {
             GetBeatmap: (beatmap_id) => ipcRenderer.invoke('GetBeatmap', beatmap_id),
             GetScores: (room_id, playlist_id) => ipcRenderer.invoke('GetScores', room_id, playlist_id),
             Log: (type, text) => ipcRenderer.invoke('Log', type, text),
+            SaveDialog: (title, filename, data) => ipcRenderer.invoke('SaveDialog', title, filename, data),
         },
         dev: { // dev stuff
             CloseWS: () => ipcRenderer.invoke('CloseWS')
