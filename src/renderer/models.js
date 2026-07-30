@@ -1,4 +1,4 @@
-import { idFromUsername, osu, GetBeatmap, MODS, addSystemMsg, showToast, confirmUI } from './utils.js'
+import { idFromUsername, osu, GetBeatmap, MODS, showToast, confirmUI } from './utils.js'
 
 function hideRoomActions() {
     document.getElementById('room-actions').classList.add('hidden')
@@ -25,9 +25,17 @@ export class User {
 export class Room {
     // stores all information about a room
     constructor(resp) { // RoomJoinedResponse data 
+        this.queue = null
         this.active = true // if it's currently showing itself
         this.id = resp.room_id 
         this.chat_channel_id = resp.chat_channel_id
+        this.msg_history = []
+        window.api.api.GetChannelMessages(resp.chat_channel_id).then(x => {
+            for (let msg of x.data) {
+                this.msg_history.push({type: "chat", data: [msg.content, msg.sender.username, msg.sender.avatar_url]})
+            }
+            this.updateUI()
+        })
         this.name = resp.name
         this.password = resp.password
         // bumped on every updateUI so async renders can tell whether the DOM
@@ -84,7 +92,6 @@ export class Room {
         // i really need to think of a better way to do this
         this.editing_playlist_item = 0;
         this.#showRoomActions()
-        this.msg_history = []
         
     }
     updateMode() {
@@ -301,7 +308,26 @@ export class Room {
         mod_div.dataset.user_id = user_id
         if (cur == null) verboseMods.appendChild(clone)
     }
+    addSystemMsg(msg) {
+        this.msg_history.push({type: "system", data: [msg]})
+        this.updateUI()
+    }
+    addChatMsg(msg, username, pfp) {
+        document.getElementById("no-messages")?.remove()
+        const template = document.getElementById("chat-message")
+        const clone = template.content.cloneNode(true);
+        
+        clone.querySelector('.chat-avatar').src = pfp
+        clone.querySelector('.chat-username').textContent = username
+        clone.querySelector('.chat-message').textContent = msg
+        
+        const chatbox = document.getElementById("chat-messages")
+        chatbox.appendChild(clone)
 
+        if (chatbox.scrollHeight - chatbox.scrollTop - chatbox.clientHeight < 50) {
+            chatbox.scrollTop = chatbox.scrollHeight;
+        }
+    }
     updateUI() {
 
         // Players
@@ -356,6 +382,27 @@ export class Room {
 
         // Match Status
         document.getElementById('cur-match-status').textContent = this.status
+
+        // Chat
+        document.getElementById("chat-messages").innerHTML = '<div id="no-messages" class="text-gray-500 dark:text-gray-400 text-sm italic">No messages yet...</div>'
+        for (const msg of this.msg_history) {
+            if (msg.type == "chat") {
+                this.addChatMsg(...msg.data)
+            } else if (msg.type == "system") {
+                document.getElementById("no-messages")?.remove()
+                const template = document.getElementById("sys-message")
+                const clone = template.content.cloneNode(true);
+                
+                clone.querySelector('.sys-message').textContent = msg.data
+                
+                const chatbox = document.getElementById("chat-messages")
+                chatbox.appendChild(clone)
+
+                if (chatbox.scrollHeight - chatbox.scrollTop - chatbox.clientHeight < 50) {
+                    chatbox.scrollTop = chatbox.scrollHeight;
+                }
+            }
+        }
     }
     close() {
         document.getElementById("playlist-items").innerHTML = ""
@@ -402,7 +449,6 @@ export class EventQueue {
 
     async #drain() {
         while (this.arr.length > 0) {
-            console.log("meow")
             const ev = this.arr.shift()
             const data = ev.data
             try {
@@ -493,10 +539,8 @@ export class EventQueue {
                     if (this.room.players[data.user_id] == undefined) break;
                     this.room.players[data.user_id].status = data.status
                     if (Object.values(this.room.players).every(p => p.status == "ready" || p.status == "referee")) {
-                    // maybe make this not do UI stuff but chat is whatevs rn
                         const msg = "All Players are ready"
-                        addSystemMsg(msg)
-                        this.room.msg_history.push(msg)
+                        this.room.addSystemMsg(msg)
                     }
                 } break;
                 case "UserModsChanged": {
@@ -530,7 +574,7 @@ export class EventQueue {
                 // TODO: store chat messages somewhere and also figure out the
                 // flow to get the previous messages
                     let user = await this.room.GetUser(data.user_id)
-                    addSystemMsg(`${user.user.username} rolled ${data.result}/${data.max}`)
+                    this.room.addSystemMsg(`${user.user.username} rolled ${data.result}/${data.max}`)
                 } break;
                 }
                 this.room.updateMode()

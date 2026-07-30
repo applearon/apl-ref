@@ -98,6 +98,20 @@ function setupIpcHandlers(getRefereeClient) {
         //console.log(x)
         return x;
     }))
+    ipcMain.handle('GetChannelMessages', createQueryHandler(getRefereeClient, (client, channel_id) => {
+        const accessToken = client.accessToken;
+        const url = new URL(`https://${OSU_SERVER}/api/v2/chat/channels/${channel_id}/messages`);
+        const headers = {
+            "Content-Type": "application/json",
+            "Accept": "application/json",
+            Authorization: `Bearer ${accessToken}`,
+        }
+        
+        return fetch(url, {
+            method: "GET",
+            headers,
+        }).then(response => response.json());
+    }))
     ipcMain.handle('SendMessage', createQueryHandler(getRefereeClient, (client, channel_id, message) => {
         const accessToken = client.accessToken;
         const url = new URL(`https://${OSU_SERVER}/api/v2/chat/channels/${channel_id}/messages`);

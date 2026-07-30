@@ -63,22 +63,6 @@ export async function logEvent(name, data) {
     log.info(name + ":" + str);
 }
 
-export function addSystemMsg(msg) {
-    document.getElementById("no-messages")?.remove()
-    const template = document.getElementById("sys-message")
-    const clone = template.content.cloneNode(true);
-    
-    clone.querySelector('.sys-message').textContent = msg
-    
-    const chatbox = document.getElementById("chat-messages")
-    chatbox.appendChild(clone)
-
-    if (chatbox.scrollHeight - chatbox.scrollTop - chatbox.clientHeight < 50) {
-        chatbox.scrollTop = chatbox.scrollHeight;
-    }
-
-}
-
 export function showToast(message, duration = 3000) {
     const toast = document.getElementById('toast')
     toast.textContent = message
