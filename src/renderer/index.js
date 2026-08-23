@@ -432,6 +432,15 @@ function slotLimitEdit(id) {
 }
 function str(id) { return document.getElementById(id).value.trim() }
 
+// Go back to Home Menu
+document.getElementById('home-button').addEventListener('click', async () => {
+    if (room != undefined) {
+        room.close();
+        room = undefined;
+    }
+})
+
+
 // Refresh Room List
 document.getElementById('refresh-room-list').addEventListener('click', async () => {
     const rooms_data = await osu.ListRooms()
