@@ -1,7 +1,7 @@
 // ── Theme Toggle ────────────────────────────────────────────────────────────
 
 import { User, Event, EventQueue, Room } from "./models.js"
-import { idFromUsername, osu, logEvent, MODS, confirmUI, log } from "./utils.js"
+import { idFromUsername, osu, logEvent, MODS, confirmUI, log, refreshRoomList } from "./utils.js"
 
 window.console.error = (...args) => {
     log.error(args.join(', '))
@@ -34,7 +34,7 @@ window.beatmaps = {}; // global cause like
 // i cant imagine that will cause problems?
 
 let rooms = {};
-let room_ids = []
+let room_ids = [] // TODO: unused? moved to utils.js
 let room;
 let connected = false;
 let countdown_id;
@@ -307,6 +307,7 @@ function hideRoomCreation() {
 
 function debugMode() { // this is kinda useless now but wtvs
     document.getElementById('room-setup').classList.remove('hidden')
+    document.getElementById('refresh-room-list').classlist.remove('hidden')
     const ping = document.getElementById("debug-menu")
     ping.classList.add('visible')
     document.getElementById('navbar-room-controls').classList.add('visible')
@@ -442,14 +443,7 @@ document.getElementById('home-button').addEventListener('click', async () => {
 
 
 // Refresh Room List
-document.getElementById('refresh-room-list').addEventListener('click', async () => {
-    const rooms_data = await osu.ListRooms()
-    room_ids = rooms_data.data.room_ids
-    document.getElementById("tabs").innerHTML = ""
-    for (let id of room_ids) {
-        addTab(id)
-    }
-})
+document.getElementById('refresh-room-list').addEventListener('click', refreshRoomList)
 
 // tab list
 function addTab(room_id) {
@@ -634,7 +628,7 @@ async function updateStatus() {
     let is_connected = status.data ? status.data.connected : false
     if (is_connected && !connected) {
         console.log(is_connected,connected, status)
-        osu.ListRooms()
+        refreshRoomList()
     }
     connected = is_connected;
     statusDot.classList.toggle('connected', connected)
@@ -657,6 +651,7 @@ document.getElementById('make-room-btn').addEventListener('click', async () => {
         room.queue = new EventQueue(room)
         hideRoomCreation()
         room.updateUI()
+        refreshRoomList()
     }
 })
 

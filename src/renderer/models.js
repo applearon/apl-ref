@@ -1,4 +1,4 @@
-import { idFromUsername, osu, GetBeatmap, MODS, showToast, confirmUI } from './utils.js'
+import { idFromUsername, osu, GetBeatmap, MODS, showToast, confirmUI, refreshRoomList } from './utils.js'
 
 function hideRoomActions() {
     document.getElementById('room-actions').classList.add('hidden')
@@ -256,6 +256,7 @@ export class Room {
         title_el.textContent = beatmap.beatmapset.title + ` [${beatmap.version}]`
     }
     #addModSettingUI(mod_list, mod, mod_template) {
+        this.updateMode()
         let empty = true
         const mod_clone = mod_template.content.cloneNode(true);
         const settings_div = mod_clone.querySelector(".mod-item")
@@ -413,6 +414,7 @@ export class Room {
         document.getElementById('room-setup').classList.remove('hidden')
 
         document.getElementById("chat-messages").innerHTML = '<div id="no-messages" class="text-gray-500 dark:text-gray-400 text-sm italic">No messages yet...</div>'
+        refreshRoomList()
     }
 }
 
