@@ -19,6 +19,9 @@ ipcRenderer.invoke('get-api-data').then(API_DATA => {
         send: api,
     
         GetConnectionStatus: () => ipcRenderer.invoke('GetConnectionStatus'),
+        onConnectionUpdate: (callback) => {
+            ipcRenderer.on('connection-update', (event, is_connected) => callback(is_connected))
+        },
         api: { // calls to the osu api the normal way
             onChatMessage :(callback) => {
                 ipcRenderer.on('chat-event', (event, buffer) => callback(buffer))

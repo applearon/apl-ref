@@ -811,6 +811,10 @@ window.api.api.onChatMessage(async buffer => {
     }
 })
 
+window.api.onConnectionUpdate(is_connected => {
+    updateStatus()
+})
+
 // just for personal use of testing
 window.osu = osu
 window.debugMode = () => debugMode()
