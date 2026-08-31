@@ -332,11 +332,11 @@ export class Room {
     }
     sendNotification(type) { // type unused for now, all the same
         let tab = document.getElementById("tabs").querySelector(`[data-room_id="${this.id}"]`)
-    if (!this.active) {
+    //if (!this.active) {
         const effect = new Audio("sfx/osu-notification.wav")
         effect.play();
         tab.querySelector("#notification").classList.remove("hidden")
-    }
+    //}
 }
     updateUI() {
         if (!this.active) return
