@@ -48,20 +48,25 @@ function switchRoom(id) {
         // room hasn't been joined yet bleh
         osu.JoinRoom(id).then((result) => {
             if (result.success) {
+                if (room != undefined) room.active = false
                 room = new Room(result.data)
                 rooms[result.data.room_id] = room
                 room.queue = new EventQueue(room)
                 hideRoomCreation()
                 room.showRoomActions()
                 room.updateUI()
-            }
+            } else return
         })
     } else {
+        if (room != undefined) room.active = false
         room = rooms[id]
+        room.active = true
         hideRoomCreation()
         room.showRoomActions()
         room.updateUI()
     }
+    let tab = document.getElementById("tabs").querySelector(`[data-room_id="${id}"]`)
+    tab.querySelector("#notification").classList.add("hidden")
 }
 
 async function ircStyleUsername(str) { // old mode is #14573534 for user id, and username otherwise
@@ -436,6 +441,7 @@ function str(id) { return document.getElementById(id).value.trim() }
 // Go back to Home Menu
 document.getElementById('home-button').addEventListener('click', async () => {
     if (room != undefined) {
+        room.active = false;
         room.close();
         room = undefined;
     }
@@ -449,6 +455,7 @@ document.getElementById('refresh-room-list').addEventListener('click', refreshRo
 function addTab(room_id) {
     const template = document.getElementById("tab-template")
     const clone = template.content.cloneNode(true);
+    clone.firstElementChild.dataset.room_id = room_id
     clone.querySelector(".tab-label").textContent = room_id
     clone.querySelectorAll('*')[0].addEventListener('click', () => {
         switchRoom(room_id)
@@ -825,3 +832,4 @@ window.rooms = () => {return rooms}
 window.switchRoom = (id) => {switchRoom(id)}
 window.addTab = (id) => {addTab(id)}
 window.log = log
+window.sendNotification = (room, type) => {sendNotification(room, type)}

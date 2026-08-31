@@ -96,7 +96,7 @@ export async function refreshRoomList() {
     let room_ids = rooms_data.data.room_ids
     document.getElementById("tabs").innerHTML = ""
     for (let id of room_ids) {
-        addTab(id)
+        addTab(id) // only exposed in index.js
     }
 }
 
