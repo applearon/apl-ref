@@ -770,7 +770,7 @@ function commandHandler(message) {
         "/savelog": () => {
             window.api.api.SaveDialog(
                 "Save Chat Logs",
-                `apl!ref ${room.id} - ${new Date().toISOString()}.txt`,
+                `apl_ref mp_${room.id}.txt`,
                 room.msg_history.map(
                     x => `[${x.timestamp}] ${x.type == "chat" ? x.data[1] : "System"}: ${x.type == "chat" ? x.data[0] : x.data}`
                 ).join('\n')
