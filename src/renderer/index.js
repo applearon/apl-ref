@@ -1,7 +1,7 @@
 // ── Theme Toggle ────────────────────────────────────────────────────────────
 
 import { User, Event, EventQueue, Room } from "./models.js"
-import { idFromUsername, osu, logEvent, MODS, addSystemMsg, confirmUI, log } from "./utils.js"
+import { idFromUsername, osu, logEvent, MODS, confirmUI, log, refreshRoomList } from "./utils.js"
 
 window.console.error = (...args) => {
     log.error(args.join(', '))
@@ -33,15 +33,40 @@ document.title = document.title + ": " + window.version
 window.beatmaps = {}; // global cause like
 // i cant imagine that will cause problems?
 
-let Queue;
+let rooms = {};
+let room_ids = [] // TODO: unused? moved to utils.js
 let room;
-
-let countdown_id;
+let connected = false;
 
 window.api.api.GetSelf().then (x => {
     window.me = x.data
 })
 
+function switchRoom(id) {
+    if (rooms[id] == undefined) {
+        // room hasn't been joined yet bleh
+        osu.JoinRoom(id).then((result) => {
+            if (result.success) {
+                if (room != undefined) room.active = false
+                room = new Room(result.data)
+                rooms[result.data.room_id] = room
+                room.queue = new EventQueue(room)
+                hideRoomCreation()
+                room.showRoomActions()
+                room.updateUI()
+            } else return
+        })
+    } else {
+        if (room != undefined) room.active = false
+        room = rooms[id]
+        room.active = true
+        hideRoomCreation()
+        room.showRoomActions()
+        room.updateUI()
+    }
+    let tab = document.getElementById("tabs").querySelector(`[data-room_id="${id}"]`)
+    tab.querySelector("#notification").classList.add("hidden")
+}
 
 async function ircStyleUsername(str) { // old mode is #14573534 for user id, and username otherwise
     if (str[0] == '#') {
@@ -81,47 +106,46 @@ async function cmdRunner(room_id, cmd, ...args) {
 
         }, // CUSTOM COMMAND
         "timer": () => {
-            clearInterval(countdown_id);
-            countdown_id = startTimer(parseInt(args[0]));
+            room.startTimer(parseInt(args[0]));
         },
         "aborttimer": () => { // TODO for this and the button, dont make it erroneously osu.StopMatchCountdown
             osu.StopMatchCountdown(room_id)
-            if (countdown_id != null) {
-                clearInterval(countdown_id)
-                addSystemMsg("Countdown aborted")
-                countdown_id = null
-            }
+            room.stopTimer()
         },
         "kick": async () => {return osu.KickPlayer(room_id, await ircStyleUsername(args[0]))},
         "ban": async () => {return osu.BanUser(room_id, await ircStyleUsername(args[0]))},
         "password": () => {return osu.ChangeRoomSettings(room_id, {password: args[0]})},
         "addref": async () => {return osu.AddReferee(room_id, await ircStyleUsername(args[0]))}, // technically needs to be tested
         "removeref": async () => {return osu.RemoveReferee(room_id, await ircStyleUsername(args[0]))},
-        "listrefs": () => {return addSystemMsg("Unimplemented")}, // need custom logic
+        "listrefs": () => {return room.addSystemMsg("Unimplemented")}, // need custom logic
         "close": () => {
             osu.CloseRoom(room.id)
+            let id = room.id;
             room.close()
             room = null
             // drop the queue too, otherwise it keeps a stale room id around and
             // events for the next room get matched against the old one
             Queue = null
 
+            delete rooms[id]
             document.getElementById("chat-messages").innerHTML = '<div id="no-messages" class="text-gray-500 dark:text-gray-400 text-sm italic">No messages yet...</div>'
         },
         "help": () => {
             // TODO: add explainations for subcommands
-            return addSystemMsg(Object.keys(map).join(', '))
+            return room.addSystemMsg(Object.keys(map).join(', '))
         },
     }
     if (!map[cmd]) {
-        addSystemMsg(`Invalid command: ${cmd}`)
+        room.addSystemMsg(`Invalid command: ${cmd}`)
         return false;
     }
     let suc = await map[cmd]()
-    let x = suc.success ? "Succeded" : "Failed"
-    let err = suc.error ?? ""
-    if (needs_resp.includes(cmd) || !suc.success) {
-        addSystemMsg(`Command ${cmd} ${x}. ${err}`)
+    if (suc != undefined) {
+        let x = suc.success ? "Succeded" : "Failed"
+        let err = suc.error ?? ""
+        if (needs_resp.includes(cmd) || !suc.success) {
+            room.addSystemMsg(`Command ${cmd} ${x}. ${err}`)
+        }
     }
 }
 
@@ -131,7 +155,7 @@ function handleModChange(args) {
     // "FM" and "NM" also
     if (args.length < 1) {
         console.log("bah youre doing it wrong");
-        addSystemMsg("Usage: !mp mods MD MD MD[1,2,3,4]")
+        room.addSystemMsg("Usage: !mp mods MD MD MD[1,2,3,4]")
         return false;
     }
     let mods = args[0].split("+")
@@ -142,7 +166,7 @@ function handleModChange(args) {
     let allowed_mods = []
     for (const mod of mods) {
         if (mod.length < 2) {
-            addSystemMsg(`Invalid mod acronym: ${mod}`)
+            room.addSystemMsg(`Invalid mod acronym: ${mod}`)
             return false
         }
         const mod_acronym = mod.slice(0,2)
@@ -162,7 +186,7 @@ function handleModChange(args) {
                 // ValidForMultiplayerAsFreeMod
                 let settings = JSON.parse(mod.slice(2))
                 if (settings.length > mod_setting_names.length) {
-                    addSystemMsg("Invalid settings: " + mod + ": too many arguments")
+                    room.addSystemMsg("Invalid settings: " + mod + ": too many arguments")
                     return false
                 }
                 let req_settings = {}
@@ -173,7 +197,7 @@ function handleModChange(args) {
                 }
                 required_mods.push({acronym: mod_acronym, settings: req_settings})
             } catch {
-                addSystemMsg("Invalid settings: " + mod + ": Couldnt parse settings")
+                room.addSystemMsg("Invalid settings: " + mod + ": Couldnt parse settings")
                 return false
             }
         }
@@ -189,16 +213,6 @@ function handleModChange(args) {
         allowed_mods
     }
 }
-// this is the old version that uses bancho-style !mp mods
-//function handleModChange(args) {
-//    // this is so stupid
-//    const fm = args.map((x) => x.toLowerCase()).includes('freemod')
-//    const mods = [ 'hd', 'hr', 'ez', 'fl', 'rx', 'so', 'nf', 'ap' ].map(m => ({acronym: m}))
-//    return {
-//        required_mods: fm ? null : args.map((x) => {return {acronym: x}}),
-//        allowed_mods: fm ? mods : [] // assuming only want normal mods..
-//    }
-//}
 
 // ── UI helpers ──────────────────────────────────────────────────────────────
 
@@ -270,12 +284,9 @@ for (const cmd of objs) {
         // ok so dont log it first since logEvent deletes room_id off the event so
         // save it before logging because we need it later
         const room_id = info?.room_id
+        
         logEvent(cmd[0], info)
-        // Queue is undefined before you join a room, and you get room_id as a
-        // C# long that may be serialised as a string, so compare as strings
-        if (Queue?.room && String(room_id) === String(Queue.room.id)) {
-            Queue.add(new Event(cmd[0], info))
-        }
+        rooms[room_id].queue.add(new Event(cmd[0], info))
     })
 }
 
@@ -297,52 +308,11 @@ function hideRoomCreation() {
 
 function debugMode() { // this is kinda useless now but wtvs
     document.getElementById('room-setup').classList.remove('hidden')
+    document.getElementById('refresh-room-list').classlist.remove('hidden')
     const ping = document.getElementById("debug-menu")
     ping.classList.add('visible')
     document.getElementById('navbar-room-controls').classList.add('visible')
     document.getElementById('settings-dropdown').classList.add('visible')
-}
-
-function addChatMsg(msg, username, pfp) {
-    document.getElementById("no-messages")?.remove()
-    const template = document.getElementById("chat-message")
-    const clone = template.content.cloneNode(true);
-    
-    clone.querySelector('.chat-avatar').src = pfp
-    clone.querySelector('.chat-username').textContent = username
-    clone.querySelector('.chat-message').textContent = msg
-    
-    const chatbox = document.getElementById("chat-messages")
-    chatbox.appendChild(clone)
-
-    if (chatbox.scrollHeight - chatbox.scrollTop - chatbox.clientHeight < 50) {
-        chatbox.scrollTop = chatbox.scrollHeight;
-    }
-
-}
-
-// Timer
-function startTimer(seconds) {
-    const informTimes = [30, 15, 10, 5]
-    window.api.api.SendMessage(room.chat_channel_id, `Started a countdown for ${seconds} seconds`)
-    let elapsed = 0
-    countdown_id = setInterval(() => {
-        //console.log(elapsed, seconds)
-        if (elapsed >= seconds) {
-            clearInterval(countdown_id)
-            window.api.api.SendMessage(room.chat_channel_id, "The countdown has ended.")
-            countdown_id = null
-            return;
-        }
-        if (informTimes.includes(seconds - elapsed) || (seconds - elapsed) % 60 == 0) {
-            let msg = "The countdown has "
-            msg += (seconds-elapsed) >= 60 ? `${Math.floor((seconds - elapsed) / 60)} minutes ` : ""
-            msg += (seconds - elapsed) % 60 != 0 ? `${(seconds - elapsed) % 60} seconds remaining.` : "remaining."
-            window.api.api.SendMessage(room.chat_channel_id, msg)
-        }
-        elapsed += 1;
-    }, 1000)
-    return countdown_id;
 }
 
 // Scores
@@ -439,6 +409,31 @@ function slotLimitEdit(id) {
     return Number.isNaN(n) ? null : clampSlots(n)
 }
 function str(id) { return document.getElementById(id).value.trim() }
+
+// Go back to Home Menu
+document.getElementById('home-button').addEventListener('click', async () => {
+    if (room != undefined) {
+        room.active = false;
+        room.close();
+        room = undefined;
+    }
+})
+
+
+// Refresh Room List
+document.getElementById('refresh-room-list').addEventListener('click', refreshRoomList)
+
+// tab list
+function addTab(room_id) {
+    const template = document.getElementById("tab-template")
+    const clone = template.content.cloneNode(true);
+    clone.firstElementChild.dataset.room_id = room_id
+    clone.querySelector(".tab-label").textContent = room_id
+    clone.querySelectorAll('*')[0].addEventListener('click', () => {
+        switchRoom(room_id)
+    })
+    document.getElementById("tabs").appendChild(clone)
+}
 
 // ── Add Playlist Modal ───────────────────────────────────────────────────
 const addPlaylistModal = document.getElementById('add-playlist-modal')
@@ -609,7 +604,12 @@ const statusText = document.getElementById('status-text')
 
 async function updateStatus() {
     const status = await window.api.GetConnectionStatus()
-    const connected = status.data ? status.data.connected : false
+    let is_connected = status.data ? status.data.connected : false
+    if (is_connected && !connected) {
+        console.log(is_connected,connected, status)
+        refreshRoomList()
+    }
+    connected = is_connected;
     statusDot.classList.toggle('connected', connected)
     statusText.textContent = connected ? 'Connected' : 'Disconnected'
 }
@@ -626,9 +626,11 @@ document.getElementById('make-room-btn').addEventListener('click', async () => {
     })
     if (result.success && result.data) {
         room = new Room(result.data)
-        Queue = new EventQueue(room)
+        rooms[result.data.room_id] = room
+        room.queue = new EventQueue(room)
         hideRoomCreation()
         room.updateUI()
+        refreshRoomList()
     }
 })
 
@@ -637,7 +639,8 @@ document.getElementById('join-room-btn').addEventListener('click', async () => {
     const result = await osu.JoinRoom(roomId)
     if (result.success) {
         room = new Room(result.data)
-        Queue = new EventQueue(room)
+        rooms[result.data.room_id] = room
+        room.queue = new EventQueue(room)
         hideRoomCreation()
         room.updateUI()
     }
@@ -667,17 +670,12 @@ document.getElementById('start-match-btn').addEventListener('click', async () =>
 })
 
 document.getElementById('timer-btn').addEventListener('click', async () => {
-    clearInterval(countdown_id);
-    countdown_id = startTimer(int('start-match-seconds'));
+    room.startTimer(int('start-match-seconds'));
 })
 
 document.getElementById('stop-countdown-btn').addEventListener('click', async () => {
     const result = await osu.StopMatchCountdown(room.id)
-    if (countdown_id != null) {
-        clearInterval(countdown_id)
-        addSystemMsg("Countdown aborted")
-        countdown_id = null
-    }
+    room.stopTimer();
 })
 
 document.getElementById('abort-match-btn').addEventListener('click', async () => {
@@ -734,6 +732,16 @@ function commandHandler(message) {
     const commands = {
         "/roll": (max) => {
             osu.Roll(room.id, {max: parseInt(max)})
+            console.log(room.id)
+        },
+        "/savelog": () => {
+            window.api.api.SaveDialog(
+                "Save Chat Logs",
+                `apl_ref mp_${room.id}.txt`,
+                room.msg_history.map(
+                    x => `[${x.timestamp}] ${x.type == "chat" ? x.data[1] : "System"}: ${x.type == "chat" ? x.data[0] : x.data}`
+                ).join('\n')
+            )
         },
         "!mp": (args) => {
             cmdRunner(room.id, args.shift(), ...args)
@@ -764,14 +772,21 @@ window.api.api.onChatMessage(async buffer => {
     };
     const messages = data.data.messages
     for (const msg of messages) {
-        if (msg.channel_id == room.chat_channel_id) {
+        let r = Object.values(rooms).find(x => x.chat_channel_id == msg.channel_id)
+        if (r != undefined) {
             //console.log("ohmygah")
             console.log(msg.sender_id, msg.content)
             let user = (await room.GetUser(msg.sender_id)).user
-            addChatMsg(msg.content, user.username, user.avatar_url)
+            //room.addChatMsg(msg.content, user.username, user.avatar_url)
+            r.msg_history.push({type: "chat", data: [msg.content, user.username, user.avatar_url], timestamp: msg.timestamp})
+            room.updateUI() // TODO: remove this line
             //if (!commandHandler(user.username, msg.content)) addChatMsg(msg.content, user.username, user.avatar_url)
         }
     }
+})
+
+window.api.onConnectionUpdate(is_connected => {
+    updateStatus()
 })
 
 // just for personal use of testing
@@ -780,4 +795,8 @@ window.debugMode = () => debugMode()
 window.ircStyleUsername = (str) => {return ircStyleUsername(str)}
 window.MODS = () => {return MODS};
 window.room = () => {return room}
+window.rooms = () => {return rooms}
+window.switchRoom = (id) => {switchRoom(id)}
+window.addTab = (id) => {addTab(id)}
 window.log = log
+window.sendNotification = (room, type) => {room.sendNotification(room, type)}

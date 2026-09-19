@@ -48,3 +48,8 @@ Bugs
     - Make sure they all align with lazer mp standards
 - Figure out how to determine the proper mod settings order
     - Maybe just check every single one from the docs but that's cursed
+
+Tabs:
+- "Status: Idle" is broken
+- Make the connecting... => connected doesn't take 5 seconds for no reason
+

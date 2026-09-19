@@ -27,6 +27,7 @@ export async function GetBeatmap(beatmap_id) {
 export async function logEvent(name, data) {
     let isRes = false;
     const keep_room_id = ["RefereeInvited"]
+    const ignore_event = ["ListRooms"]
     if (data instanceof Promise) { // if it's a method we sent
         data = await data
         isRes = true;
@@ -58,25 +59,9 @@ export async function logEvent(name, data) {
     }
     entry.append(time)
     entry.append(logData)
-    log_div.prepend(entry)
+    if (!ignore_event.includes(name)) log_div.prepend(entry)
     const str = JSON.stringify(data)
     log.info(name + ":" + str);
-}
-
-export function addSystemMsg(msg) {
-    document.getElementById("no-messages")?.remove()
-    const template = document.getElementById("sys-message")
-    const clone = template.content.cloneNode(true);
-    
-    clone.querySelector('.sys-message').textContent = msg
-    
-    const chatbox = document.getElementById("chat-messages")
-    chatbox.appendChild(clone)
-
-    if (chatbox.scrollHeight - chatbox.scrollTop - chatbox.clientHeight < 50) {
-        chatbox.scrollTop = chatbox.scrollHeight;
-    }
-
 }
 
 export function showToast(message, duration = 3000) {
@@ -104,6 +89,15 @@ export function confirmUI(title, body) {
         okBtn.onclick = () => settle(true)
         cancelBtn.onclick = () => settle(false)
     })
+}
+
+export async function refreshRoomList() {
+    const rooms_data = await osu.ListRooms()
+    let room_ids = rooms_data.data.room_ids
+    document.getElementById("tabs").innerHTML = ""
+    for (let id of room_ids) {
+        addTab(id) // only exposed in index.js
+    }
 }
 
 let objs = Object.entries(window.api.send)

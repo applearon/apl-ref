@@ -77,7 +77,7 @@
     <!-- Navbar -->
     <div id="toast" class="hidden fixed top-10 left-4 px-4 py-2 rounded shadow-lg bg-gray-800 text-white"></div>       
     <div id="navbar" class="bg-pink-600">
-      <h5 id="room-name"  class="text-base font-normal whitespace-nowrap m-0">APL Ref Client</h5>
+      <h5 id="room-name"  class="text-base font-normal whitespace-nowrap m-0">apl!ref</h5>
       <div id="room-badge" class="room-badge cursor-pointer bg-pink-800 hover:bg-pink-900">
         Copy Room link
       </div>
@@ -86,11 +86,14 @@
         <strong id="room-chat-id"></strong>
       </div>
       <div id="add-referee" class="text-white bg-green-600 hover:bg-green-700 rounded px-3 py-1 text-sm cursor-pointer border-0 h-8 whitespace-nowrap flex items-center">Add Referee</div>
+      <div id="tabs" class="flex self-stretch"></div>
       <div class="navbar-spacer"></div>
       <div id="navbar-room-controls">
         <button id="settings-trigger" class="text-white bg-black/15 hover:bg-black/25 rounded px-3 py-1 text-sm cursor-pointer border-0 h-8 whitespace-nowrap flex items-center">⚙ Settings</button>
-        <button id="close-room-btn" class="text-white bg-red-700 hover:bg-red-800 rounded px-3 py-1 text-sm cursor-pointer border-0 h-8 whitespace-nowrap flex items-center">Close Room</button>
+        <button id="close-room-btn" class="text-white bg-red-700 hover:bg-red-800 rounded px-3 py-1 text-sm cursor-pointer border-0 h-8 flex items-center">Close Room</button>
       </div>
+          <div id="home-button" class="flex items-center justify-center h-full w-15 cursor-pointer select-none bg-black/15 hover:bg-black/25 text-sm tab-item tab-label break-normal text-center">Home</div>
+          <div id="refresh-room-list" class="hidden flex items-center h-full w-20 cursor-pointer select-none bg-black/15 hover:bg-black/25 text-sm tab-item tab-label break-normal text-center">Refresh Room List</div>
       <button id="theme-toggle" class="text-white bg-black/15 hover:bg-black/25 rounded px-3 py-1 text-sm cursor-pointer border-0 h-8 whitespace-nowrap flex items-center">☀️</button>
 
       <div class="status-chip">
@@ -270,7 +273,7 @@
           </div>
           <div class="w-full md:w-1/3">
             <label class="text-sm text-gray-600 dark:text-gray-400 block mb-1">Beatmap ID</label>
-            <input value="2626718" id="make-beatmap-id" type="number" class="w-full border border-gray-300 dark:border-gray-600 rounded px-2 py-1 bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-100" />
+            <input value="5467291" id="make-beatmap-id" type="number" class="w-full border border-gray-300 dark:border-gray-600 rounded px-2 py-1 bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-100" />
           </div>
           <div class="w-full md:w-1/3">
             <label class="text-sm text-gray-600 dark:text-gray-400 block mb-1">Room Name</label>
@@ -355,6 +358,12 @@
       </div><!-- /#room-actions -->
 
     </div>
+    <template id="tab-template">
+      <div class="flex items-center h-full px-3 cursor-pointer select-none bg-black/15 hover:bg-black/25 text-sm whitespace-nowrap tab-item">
+         <span id="notification" class="w-2 h-2 bg-yellow-400 rounded-full hidden"></span>
+        <span class="tab-label px-1"></span>
+      </div>
+    </template>
     <template id="player-item">
       <div class="player-item">
         <span class="player-team"></span>

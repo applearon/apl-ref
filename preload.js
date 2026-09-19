@@ -19,6 +19,9 @@ ipcRenderer.invoke('get-api-data').then(API_DATA => {
         send: api,
     
         GetConnectionStatus: () => ipcRenderer.invoke('GetConnectionStatus'),
+        onConnectionUpdate: (callback) => {
+            ipcRenderer.on('connection-update', (event, is_connected) => callback(is_connected))
+        },
         api: { // calls to the osu api the normal way
             onChatMessage :(callback) => {
                 ipcRenderer.on('chat-event', (event, buffer) => callback(buffer))
@@ -26,9 +29,11 @@ ipcRenderer.invoke('get-api-data').then(API_DATA => {
             GetUser: (user_id) => ipcRenderer.invoke('GetUser', user_id),
             GetSelf: () => ipcRenderer.invoke('GetSelf'),
             SendMessage: (channel_id, message) => ipcRenderer.invoke('SendMessage', channel_id, message),
+            GetChannelMessages: (channel_id) => ipcRenderer.invoke('GetChannelMessages', channel_id),
             GetBeatmap: (beatmap_id) => ipcRenderer.invoke('GetBeatmap', beatmap_id),
             GetScores: (room_id, playlist_id) => ipcRenderer.invoke('GetScores', room_id, playlist_id),
             Log: (type, text) => ipcRenderer.invoke('Log', type, text),
+            SaveDialog: (title, filename, data) => ipcRenderer.invoke('SaveDialog', title, filename, data),
         },
         dev: { // dev stuff
             CloseWS: () => ipcRenderer.invoke('CloseWS')
