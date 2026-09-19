@@ -93,6 +93,8 @@ export class Room {
         // i really need to think of a better way to do this
         this.editing_playlist_item = 0;
         this.showRoomActions()
+
+        this.timer_countdown_id = null
         
     }
     updateMode() {
@@ -310,6 +312,36 @@ export class Room {
         mod_div.dataset.user_id = user_id
         if (cur == null) verboseMods.appendChild(clone)
     }
+    startTimer(seconds) {
+        clearInterval(this.timer_countdown_id);
+        const informTimes = [30, 15, 10, 5]
+        window.api.api.SendMessage(this.chat_channel_id, `Started a countdown for ${seconds} seconds`)
+        let elapsed = 0
+        this.timer_countdown_id = setInterval(() => {
+            //console.log(elapsed, seconds)
+            if (elapsed >= seconds) {
+                clearInterval(this.timer_countdown_id)
+                window.api.api.SendMessage(this.chat_channel_id, "The countdown has ended.")
+                this.timer_countdown_id = null
+                return;
+            }
+            if (informTimes.includes(seconds - elapsed) || (seconds - elapsed) % 60 == 0) {
+                let msg = "The countdown has "
+                msg += (seconds-elapsed) >= 60 ? `${Math.floor((seconds - elapsed) / 60)} minutes ` : ""
+                msg += (seconds - elapsed) % 60 != 0 ? `${(seconds - elapsed) % 60} seconds remaining.` : "remaining."
+                window.api.api.SendMessage(this.chat_channel_id, msg)
+            }
+            elapsed += 1;
+        }, 1000)
+        return this.timer_countdown_id;
+    }
+    stopTimer() {
+        if (this.timer_countdown_id != null) {
+            clearInterval(this.timer_countdown_id);
+            this.addSystemMsg("Timer countdown aborted.");
+            this.timer_countdown_id = null;
+        }
+    }
     addSystemMsg(msg) {
         this.msg_history.push({type: "system", data: [msg], timestamp: new Date().toISOString()})
         this.updateUI()
@@ -332,12 +364,11 @@ export class Room {
     }
     sendNotification(type) { // type unused for now, all the same
         let tab = document.getElementById("tabs").querySelector(`[data-room_id="${this.id}"]`)
-    //if (!this.active) {
+        //if (!this.active) {
         const effect = new Audio("sfx/osu-notification.wav")
         effect.play();
         tab.querySelector("#notification").classList.remove("hidden")
-    //}
-}
+    }
     updateUI() {
         if (!this.active) return
         // Players
@@ -570,6 +601,8 @@ export class EventQueue {
                     this.room.players[data.user_id].team = data.team
                 } break;
                 case "CountdownStarted":
+                    this.room.stopTimer();
+                    break;
                 case "CountdownStopped":
                     break;
                 case "MatchStarted": {

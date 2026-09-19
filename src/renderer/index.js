@@ -37,7 +37,6 @@ let rooms = {};
 let room_ids = [] // TODO: unused? moved to utils.js
 let room;
 let connected = false;
-let countdown_id;
 
 window.api.api.GetSelf().then (x => {
     window.me = x.data
@@ -107,16 +106,11 @@ async function cmdRunner(room_id, cmd, ...args) {
 
         }, // CUSTOM COMMAND
         "timer": () => {
-            clearInterval(countdown_id);
-            countdown_id = startTimer(parseInt(args[0]));
+            room.startTimer(parseInt(args[0]));
         },
         "aborttimer": () => { // TODO for this and the button, dont make it erroneously osu.StopMatchCountdown
             osu.StopMatchCountdown(room_id)
-            if (countdown_id != null) {
-                clearInterval(countdown_id)
-                room.addSystemMsg("Countdown aborted")
-                countdown_id = null
-            }
+            room.stopTimer()
         },
         "kick": async () => {return osu.KickPlayer(room_id, await ircStyleUsername(args[0]))},
         "ban": async () => {return osu.BanUser(room_id, await ircStyleUsername(args[0]))},
@@ -146,10 +140,12 @@ async function cmdRunner(room_id, cmd, ...args) {
         return false;
     }
     let suc = await map[cmd]()
-    let x = suc.success ? "Succeded" : "Failed"
-    let err = suc.error ?? ""
-    if (needs_resp.includes(cmd) || !suc.success) {
-        room.addSystemMsg(`Command ${cmd} ${x}. ${err}`)
+    if (suc != undefined) {
+        let x = suc.success ? "Succeded" : "Failed"
+        let err = suc.error ?? ""
+        if (needs_resp.includes(cmd) || !suc.success) {
+            room.addSystemMsg(`Command ${cmd} ${x}. ${err}`)
+        }
     }
 }
 
@@ -317,30 +313,6 @@ function debugMode() { // this is kinda useless now but wtvs
     ping.classList.add('visible')
     document.getElementById('navbar-room-controls').classList.add('visible')
     document.getElementById('settings-dropdown').classList.add('visible')
-}
-
-// Timer
-function startTimer(seconds) {
-    const informTimes = [30, 15, 10, 5]
-    window.api.api.SendMessage(room.chat_channel_id, `Started a countdown for ${seconds} seconds`)
-    let elapsed = 0
-    countdown_id = setInterval(() => {
-        //console.log(elapsed, seconds)
-        if (elapsed >= seconds) {
-            clearInterval(countdown_id)
-            window.api.api.SendMessage(room.chat_channel_id, "The countdown has ended.")
-            countdown_id = null
-            return;
-        }
-        if (informTimes.includes(seconds - elapsed) || (seconds - elapsed) % 60 == 0) {
-            let msg = "The countdown has "
-            msg += (seconds-elapsed) >= 60 ? `${Math.floor((seconds - elapsed) / 60)} minutes ` : ""
-            msg += (seconds - elapsed) % 60 != 0 ? `${(seconds - elapsed) % 60} seconds remaining.` : "remaining."
-            window.api.api.SendMessage(room.chat_channel_id, msg)
-        }
-        elapsed += 1;
-    }, 1000)
-    return countdown_id;
 }
 
 // Scores
@@ -698,17 +670,12 @@ document.getElementById('start-match-btn').addEventListener('click', async () =>
 })
 
 document.getElementById('timer-btn').addEventListener('click', async () => {
-    clearInterval(countdown_id);
-    countdown_id = startTimer(int('start-match-seconds'));
+    room.startTimer(int('start-match-seconds'));
 })
 
 document.getElementById('stop-countdown-btn').addEventListener('click', async () => {
     const result = await osu.StopMatchCountdown(room.id)
-    if (countdown_id != null) {
-        clearInterval(countdown_id)
-        room.addSystemMsg("Countdown aborted")
-        countdown_id = null
-    }
+    room.stopTimer();
 })
 
 document.getElementById('abort-match-btn').addEventListener('click', async () => {
@@ -832,4 +799,4 @@ window.rooms = () => {return rooms}
 window.switchRoom = (id) => {switchRoom(id)}
 window.addTab = (id) => {addTab(id)}
 window.log = log
-window.sendNotification = (room, type) => {sendNotification(room, type)}
+window.sendNotification = (room, type) => {room.sendNotification(room, type)}
