@@ -102,7 +102,10 @@ async function cmdRunner(room_id, cmd, ...args) {
             osu.CloseRoom(room.id)
             room.close()
             room = null
-    
+            // drop the queue too, otherwise it keeps a stale room id around and
+            // events for the next room get matched against the old one
+            Queue = null
+
             document.getElementById("chat-messages").innerHTML = '<div id="no-messages" class="text-gray-500 dark:text-gray-400 text-sm italic">No messages yet...</div>'
         },
         "help": () => {
@@ -264,8 +267,15 @@ document.addEventListener('click', (e) => {
 let objs = Object.entries(window.api.on)
 for (const cmd of objs) {
     cmd[1](info => {
-        if (info?.room_id == Queue.room.id) Queue.add(new Event(cmd[0], info))    
+        // ok so dont log it first since logEvent deletes room_id off the event so
+        // save it before logging because we need it later
+        const room_id = info?.room_id
         logEvent(cmd[0], info)
+        // Queue is undefined before you join a room, and you get room_id as a
+        // C# long that may be serialised as a string, so compare as strings
+        if (Queue?.room && String(room_id) === String(Queue.room.id)) {
+            Queue.add(new Event(cmd[0], info))
+        }
     })
 }
 
@@ -413,6 +423,21 @@ async function addScore(room_id, playlist_id) {
 }
 
 function int(id) { return parseInt(document.getElementById(id).value, 10) }
+// womp womp f*ck you servermultiplayerroom for your [2, 16]
+const MAX_SLOTS = 16
+// 0 means unlimited to the server, and [2, MAX_SLOTS] is the real limit for change.
+function clampSlots(n) {
+    if (n <= 0) return 0
+    return Math.min(Math.max(n, 2), MAX_SLOTS)
+}
+function slotLimitNew(id) {
+    const n = int(id)
+    return Number.isNaN(n) ? 0 : clampSlots(n)
+}
+function slotLimitEdit(id) {
+    const n = int(id)
+    return Number.isNaN(n) ? null : clampSlots(n)
+}
 function str(id) { return document.getElementById(id).value.trim() }
 
 // ── Add Playlist Modal ───────────────────────────────────────────────────
@@ -597,7 +622,7 @@ document.getElementById('make-room-btn').addEventListener('click', async () => {
         ruleset_id: int('make-ruleset-id'),
         beatmap_id: int('make-beatmap-id'),
         name: str('make-room-name'),
-        max_participants: Object.is(int('make-room-max-participants'), NaN) ? 0 : int('make-room-max-participants')
+        max_participants: slotLimitNew('make-room-max-participants')
     })
     if (result.success && result.data) {
         room = new Room(result.data)
@@ -623,13 +648,14 @@ document.getElementById('change-settings-btn').addEventListener('click', async (
     const settings = {}
     const name = str('settings-name')
     const password = str('settings-password')
-    let max_participants = int('settings-maximum-participants')
-    if (Object.is(max_participants), NaN) max_participants = 0
+    const max_participants = slotLimitEdit('settings-maximum-participants')
     settings.type = document.getElementsByName("match_type")[0].checked ? "head_to_head" : "team_versus";
-    settings.max_participants = max_participants
+    // null means keep the current limit, so leave the key off entirely
+    if (max_participants != null) settings.max_participants = max_participants
     if (name) settings.name = name
     if (password) settings.password = password
     const result = await osu.ChangeRoomSettings(room.id, settings)
+    if (!result.success) addSystemMsg(`Settings change failed. ${result.error ?? ""}`)
     hideSettingsDropdown()
 })
 
@@ -667,6 +693,9 @@ document.getElementById('close-room-btn').addEventListener('click', async () => 
     const result = await osu.CloseRoom(room.id)
     if (result.success) {
         room.close()
+        // same as on line 107
+        room = null
+        Queue = null
     } else {
         console.log("How the hell")
     }

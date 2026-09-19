@@ -29,6 +29,9 @@ export class Room {
         this.chat_channel_id = resp.chat_channel_id
         this.name = resp.name
         this.password = resp.password
+        // bumped on every updateUI so async renders can tell whether the DOM
+        // they started drawing into is still the current one
+        this.ui_generation = 0
         this.playlistItems = {}
         for (const item of resp.playlist) {
             if (!item.was_played) this.playlistItems[item.id] = item
@@ -36,8 +39,23 @@ export class Room {
         this.mode = this.updateMode()
         this.players = {}
         this.refs = {}
-        this.max_participants = resp.state.slots?.length ?? 0;
-        this.player_slots = resp.state.slots ?? []
+        // Limit = 0 is working but null works better i dont know why they did it like that
+        // i mean really why is ChangeRoomSettingsRequest is nullable but MakeRoomRequest is not
+        // and WHY MakeRoomRequest has a documented range of [2, 256] 
+        // BUT ChangeRoomSettingsRequest HAS A DOCUMENTED RANGE OF [2, 128] 
+        // WHILE THE ServerMultiplayerRoom HAS A DOCUMENTED RANGE OF [2, 16] 
+        // AND IT APPLIES ONLY WHEN YOU DO CHANGE ROOM SETTINGS REQUEST 
+        // BUT NOT WHEN YOU MAKE THE ROOM ITSELF
+
+        // I CAN MAKE A ROOM WITH 255 SLOTS (NOT 256 BECAUSE BYTE OVERFLOWS)
+        // I CAN ***TRY*** TO CHANGE IT TO 128 ONLY BECAUSE DOCUMENTED RANGE
+        // AND GET F*CKING REJECTED BECAUSE SERVER LIMIT OF 16?????
+        // WTF
+        this.max_participants = resp.state.slots?.length ?? null
+        // seed the slot list up front: GetUser calls below are async, and
+        // updateUI runs before they resolve. null slots to render
+        // an empty player list until every user request comes back.
+        this.player_slots = resp.state.slots ?? resp.players.map(p => p.user_id)
 
         for (const ref of resp.referees) {
             this.GetUser(ref.user_id).then(() => {
@@ -47,12 +65,11 @@ export class Room {
         }
         for (const p of resp.players) {
             this.GetUser(p.user_id, true).then(() => {
-                this.players[p.user_id].team = p.team
+                this.players[p.user_id].team = p.team ?? "none" // this is also set somewhere else but whatever
                 this.players[p.user_id].mods = p.mods
                 this.players[p.user_id].status = p.status
                 this.players[p.user_id].style = p.style
                 this.players[p.user_id].mods = p.mods
-                if (this.max_participants == 0 ) this.player_slots.push(p.user_id)
                 // TODO: maybe there's a cleaner way to do this?
                 // since it gets the stuff too slowly so yeah
                 this.updateUI()
@@ -68,13 +85,19 @@ export class Room {
         this.#showRoomActions()
     }
     updateMode() {
-        this.mode = Object.values(this.playlistItems).find(x => x.order==0).ruleset_id ?? 0
+        // the '?? 0' bound after the property access, so a missing order==0 item
+        // threw instead of falling back. that happens whenever the current item was
+        // just played or the playlist is momentarily empty between events.
+        this.mode = Object.values(this.playlistItems).find(x => x.order == 0)?.ruleset_id ?? 0
+        return this.mode
     }
     async GetUser(user_id, normal) {
         normal = normal ?? false
         user_id = idFromUsername(user_id, this.players, this.refs) ?? user_id
         let user = this.players[user_id] ?? this.refs[user_id]
         if (user != undefined) {
+            // presence handlers just miss refs all the time so cache refs in players and refs 
+            if (normal) this.players[user_id] = user
             return user
         } else {
             console.log("grabbing new player!!", user_id, normal)
@@ -207,9 +230,20 @@ export class Room {
             document.getElementById('edit-playlist-modal').classList.add('visible')
         })
 
+        // grab the node before appending: 'clone' empties out once appended 
+        // and looking the node up globally after the await runs
+        // with another updateUI that already wiped and rebuilt the list.
+        // playlist item ids dont change on edit, so old and new nodes share
+        // the same class and querySelector would return the stale one.
+        const item_el = clone.querySelector(".playlist-item")
+        const title_el = item_el.querySelector('.playlist-item-id')
         document.getElementById("playlist-items").appendChild(clone)
+
+        const gen = this.ui_generation
         const beatmap = await GetBeatmap(beatmap_id)
-        document.querySelector(`[class~="${playlist_id}"]`).querySelector('.playlist-item-id').textContent = beatmap.beatmapset.title + ` [${beatmap.version}]`
+        // a newer updateUI() ran while we were waiting; this node is orphaned
+        if (gen !== this.ui_generation || !item_el.isConnected) return
+        title_el.textContent = beatmap.beatmapset.title + ` [${beatmap.version}]`
     }
     #addModSettingUI(mod_list, mod, mod_template) {
         let empty = true
@@ -237,7 +271,10 @@ export class Room {
         return {empty, undefault_settings}
     }
     async #addVerboseMods(user_id, mods) {
+        const gen = this.ui_generation
         let user = await this.GetUser(user_id, true)
+        // GetUser can hit the api; return if the UI was rebuilt while we waited
+        if (gen !== this.ui_generation) return
         const verboseMods = document.getElementById("mods-verbose-container");
         const cur = verboseMods.querySelector(`[data-user_id="${user_id}"]`)
         const template = document.getElementById("player-mods-verbose");
@@ -266,6 +303,8 @@ export class Room {
 
         // Players
         console.log("Updating UI")
+        // invalidates any async render still on the way from a previous call
+        this.ui_generation++
         document.getElementById("player-list").innerHTML = ''
         for (const pid of this.player_slots) { // ordered properly
             const player = this.players[pid] ?? this.refs[pid]
@@ -287,7 +326,8 @@ export class Room {
         document.getElementById('cur-match-type').textContent = this.type
         document.getElementById('settings-name').value = this.name
         document.getElementById('settings-password').value = this.password
-        document.getElementById('settings-maximum-participants').value = this.max_participants
+        // unlimited shows as a blank field rather than the string "null"
+        document.getElementById('settings-maximum-participants').value = this.max_participants ?? ''
         document.getElementsByName("match_type")[0].checked = this.type == "head_to_head"
         document.getElementsByName("match_type")[1].checked = this.type != "head_to_head"
         
@@ -348,102 +388,150 @@ export class EventQueue {
 
     async #queueLoop() { // TODO maybe add a flag for if we want to update UI
         this.processing = true;
+        try {
+            await this.#drain()
+        } finally {
+            // must always clear. if this stays always true, the queue never restarts
+            // and every later event is silently dropped while the UI stays frozen
+            this.processing = false;
+        }
+    }
+
+    async #drain() {
         while (this.arr.length > 0) {
             const ev = this.arr.shift()
             const data = ev.data
-            switch (ev.name) {
-            case "UserJoined": {
-                const user = await this.room.GetUser(data.user_id, true)
-                console.log(user.user.username, "has joined!!")
-                //addPlayer(info.user_id, "idle", user.user.username, "none")
-                this.room.players[data.user_id].status = "idle"
-                this.room.players[data.user_id].team = "none"
-                if (!this.room.max_participants) this.room.player_slots.push(data.user_id)
-            } break;
-            case "UserLeft": {
-                delete this.room.players[data.user_id]
-                if (!this.room.max_participants) this.room.player_slots = this.room.player_slots.filter(x => x != data.user_id)
-            } break;
-            case "UserKicked": {
-                if (data.kicked_user_id == window.me.id) {
-                    this.close()
+            try {
+                switch (ev.name) {
+                case "UserJoined": {
+                    const user = await this.room.GetUser(data.user_id, true)
+                    console.log(user.user.username, "has joined!!")
+                    //addPlayer(info.user_id, "idle", user.user.username, "none")
+                    // use what GetUser gave you, why read dict if all data is right here...
+                    // andalso  status doubles as the role marker, so don't kill a ref
+                    if (user.status != "referee") {
+                        user.status = "idle"
+                        user.team = "none"
+                    }
+                    // only track slots when the room is unlimited; 
+                    // a sized room gets its slot array from MatchStateChanged
+                    if (this.room.max_participants == null) this.room.player_slots.push(data.user_id)
+                } break;
+                case "UserLeft": {
+                    // fix on my stupid attempt
+                    delete this.room.players[data.user_id]
+                    if (this.room.max_participants == null) this.room.player_slots = this.room.player_slots.filter(x => x != data.user_id)
+                } break;
+                case "UserKicked": {
+                    if (data.kicked_user_id == window.me.id) {
+                        this.close()
                     // TODO: make sure this works
-                }
-                delete this.room.players[data.kicked_user_id]
-                if (!this.room.max_participants) this.room.player_slots = this.room.player_slots.filter(x => x != data.kicked_user_id)
-            } break;
-            case "RoomSettingsChanged": {
-                this.room.name = data.name
-                this.room.password = data.password
-                this.room.type = data.type
-                this.room.max_participants = data.max_participants
-                if (data.max_participants == null) this.room.player_slots = this.room.player_slots.filter(x => x != null)
-            } break;
-            case "MatchStateChanged": {
-                this.room.locked = data.state.locked;
-                this.room.type = data.state.type
-                if (data.state.slots) this.room.player_slots = data.state.slots
-            } break;
-            case "PlaylistItemAdded": {
-                if (data.playlist_item.was_played) {
-                    delete this.room.playlistItems[data.playlist_item.id]
-                } else {
-                    this.room.playlistItems[data.playlist_item.id] = data.playlist_item
-                }
-            } break;
-            case "PlaylistItemChanged": {
-                if (data.playlist_item.was_played) {
-                    delete this.room.playlistItems[data.playlist_item.id]
-                } else {
-                    Object.keys(data.playlist_item).forEach(key => {
-                        this.room.playlistItems[data.playlist_item.id][key] = data.playlist_item[key]
-                    })
-                }
-            } break;
-            case "PlaylistItemRemoved": {
-                delete this.room.playlistItems[data.playlist_item_id]
-            } break;
-            case "UserStatusChanged": {
-                this.room.players[data.user_id].status = data.status
-                if (Object.values(this.room.players).every(p => p.status == "ready")) {
+                    }
+                    delete this.room.players[data.kicked_user_id]
+                    if (this.room.max_participants == null) this.room.player_slots = this.room.player_slots.filter(x => x != data.kicked_user_id)
+                } break;
+                case "RefereeAdded": {
+                    // privilege, not presence: they may not have joined yet.
+                    // without this they get fetched cold by UserJoined as a
+                    // normal player and render as "idle" instead of "referee"
+                    const user = await this.room.GetUser(data.user_id)
+                    user.status = "referee"
+                } break;
+                case "RefereeRemoved": {
+                    delete this.room.refs[data.user_id]
+                } break;
+                case "UserBanned": {
+                    delete this.room.players[data.user_id]
+                    delete this.room.refs[data.user_id]
+                    if (this.room.max_participants == null) this.room.player_slots = this.room.player_slots.filter(x => x != data.user_id)
+                } break;
+                case "RoomSettingsChanged": {
+                    this.room.name = data.name
+                    this.room.password = data.password
+                    this.room.type = data.type
+                    // server reports unlimited as null or 0 depending on
+                    // how the room was set up; normalize both to null
+                    this.room.max_participants = data.max_participants || null
+                    // drop to unlimited: hide the padded empty slots away.
+                    // growing or shrinking a sized room is left to MatchStateChanged,
+                    // which the server always sends alongside this.
+                    if (this.room.max_participants == null) this.room.player_slots = this.room.player_slots.filter(x => x != null)
+                } break;
+                case "MatchStateChanged": {
+                    this.room.locked = data.state.locked;
+                    this.room.type = data.state.type
+                    // if settings box still show stale count after resizing the room
+                    if (data.state.slots) {
+                        this.room.player_slots = data.state.slots
+                        this.room.max_participants = data.state.slots.length
+                    }
+                } break;
+                case "PlaylistItemAdded": {
+                    if (data.playlist_item.was_played) {
+                        delete this.room.playlistItems[data.playlist_item.id]
+                    } else {
+                        this.room.playlistItems[data.playlist_item.id] = data.playlist_item
+                    }
+                } break;
+                case "PlaylistItemChanged": {
+                    if (data.playlist_item.was_played) {
+                        delete this.room.playlistItems[data.playlist_item.id]
+                    } else {
+                        Object.keys(data.playlist_item).forEach(key => {
+                            this.room.playlistItems[data.playlist_item.id][key] = data.playlist_item[key]
+                        })
+                    }
+                } break;
+                case "PlaylistItemRemoved": {
+                    delete this.room.playlistItems[data.playlist_item_id]
+                } break;
+                case "UserStatusChanged": {
+                    this.room.players[data.user_id].status = data.status
+                    if (Object.values(this.room.players).every(p => p.status == "ready")) {
                     // maybe make this not do UI stuff but chat is whatevs rn
-                    addSystemMsg("All Players are ready")
-                }
-            } break;
-            case "UserModsChanged": {
-                this.room.players[data.user_id].mods = data.mods
-            } break;
-            case "UserStyleChanged": {
+                        addSystemMsg("All Players are ready")
+                    }
+                } break;
+                case "UserModsChanged": {
+                    this.room.players[data.user_id].mods = data.mods
+                } break;
+                case "UserStyleChanged": {
                 // yeah i continue to question your sanity
                 // if you need this for your tournament
-            } break;
-            case "UserTeamChanged": {
-                this.room.players[data.user_id].team = data.team
-            } break;
-            case "CountdownStarted":
-            case "CountdownStopped":
-                break;
-            case "MatchStarted": {
-                this.room.status = "Playing"
-            } break;
-            case "MatchAborted": {
-                this.room.status = "Aborted"
-            } break;
-            case "MatchCompleted": {
-                this.room.status = "Idle"
-            } break;
-            case "RollCompleted": {
+
+                // decordy_: bruh if someone makes cross-mode tournament,
+                // that would be f*cking sick ngl
+                } break;
+                case "UserTeamChanged": {
+                    this.room.players[data.user_id].team = data.team
+                } break;
+                case "CountdownStarted":
+                case "CountdownStopped":
+                    break;
+                case "MatchStarted": {
+                    this.room.status = "Playing"
+                } break;
+                case "MatchAborted": {
+                    this.room.status = "Aborted"
+                } break;
+                case "MatchCompleted": {
+                    this.room.status = "Idle"
+                } break;
+                case "RollCompleted": {
                 // Again i don't love doing UI changes here but
                 // chat stuff is ephemeral rn anyways so
                 // TODO: store chat messages somewhere and also figure out the
                 // flow to get the previous messages
-                let user = await this.room.GetUser(data.user_id)
-                addSystemMsg(`${user.user.username} rolled ${data.result}/${data.max}`)
-            } break;
+                    let user = await this.room.GetUser(data.user_id)
+                    addSystemMsg(`${user.user.username} rolled ${data.result}/${data.max}`)
+                } break;
+                }
+                this.room.updateMode()
+                this.room.updateUI()
+            } catch (err) {
+                // one bad event shouldnt stop the rest of the queue from moving; just log it
+                console.error(`Failed to handle ${ev.name}:`, err)
             }
-            this.room.updateMode()
-            this.room.updateUI()
         }
-        this.processing = false;
     }
 }
