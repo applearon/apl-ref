@@ -7,8 +7,20 @@ const { getLogger } = require("@logtape/logtape")
 const IS_PROD = process.env.DEV_SERVER == null
 const  OSU_SERVER = IS_PROD ? "osu.ppy.sh" : "dev.ppy.sh"
 
+// Only allow IPC calls that originate from this app's own top-level frame
+// (loaded from a local file:// path), not from embedded iframes or content
+// that has navigated away from the app, to prevent unauthorized invocation
+// of privileged operations from untrusted renderer content.
+function isAuthorizedSender(event) {
+    const frame = event.senderFrame
+    return !!frame && frame === event.sender.mainFrame && frame.url.startsWith('file://')
+}
+
 function createHandler(getRefereeClient, handlerFn) {
     return async (event, ...args) => {
+        if (!isAuthorizedSender(event)) {
+            return { success: false, error: 'Unauthorized' }
+        }
         const refereeClient = getRefereeClient()
         if (!refereeClient) {
             return { success: false, error: 'Client not initialized' }
@@ -24,6 +36,9 @@ function createHandler(getRefereeClient, handlerFn) {
 
 function genericHandler(getRefereeClient, cmd) {
     return async (event, ...args) => {
+        if (!isAuthorizedSender(event)) {
+            return { success: false, error: 'Unauthorized' }
+        }
         const refereeClient = getRefereeClient();
         if (!refereeClient) {
             return { success: false, error: 'Client not initialized' }
@@ -44,6 +59,9 @@ function genericHandler(getRefereeClient, cmd) {
 
 function createQueryHandler(getRefereeClient, queryFn) {
     return async (event, ...args) => {
+        if (!isAuthorizedSender(event)) {
+            return { success: false, error: 'Unauthorized' }
+        }
         const refereeClient = getRefereeClient()
         try {
             return { success: true, data: await queryFn(refereeClient, ...args) }
