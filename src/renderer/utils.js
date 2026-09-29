@@ -121,3 +121,23 @@ fetch('mods.json').then(mod_res => {
 })
 
 export { osu, MODS, log }
+
+export function showSlotsError(id, msg) {
+    const el = document.getElementById(id)
+    el.textContent = msg ?? ""
+    el.classList.toggle("hidden", !msg)
+}
+
+export function isUnlimited(id) { return document.getElementById(id).getAttribute('aria-pressed') === 'true' }
+
+// unlimited and count are mutually exclusive; gray out instead of leaving a number
+export function setUnlimited(button_id, input_id, error_id, on) {
+    const btn = document.getElementById(button_id)
+    btn.setAttribute('aria-pressed', String(on))
+    btn.classList.toggle('bg-pink-500', on)
+    btn.classList.toggle('hover:bg-pink-600', on)
+    btn.classList.toggle('bg-gray-400', !on)
+    btn.classList.toggle('hover:bg-gray-500', !on)
+    document.getElementById(input_id).disabled = on
+    if (on) showSlotsError(error_id, null)
+}

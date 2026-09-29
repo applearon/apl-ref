@@ -1,7 +1,7 @@
 // ── Theme Toggle ────────────────────────────────────────────────────────────
 
 import { User, Event, EventQueue, Room } from "./models.js"
-import { idFromUsername, osu, logEvent, MODS, addSystemMsg, confirmUI, log } from "./utils.js"
+import { idFromUsername, osu, logEvent, MODS, addSystemMsg, confirmUI, log, showSlotsError, isUnlimited, setUnlimited } from "./utils.js"
 
 window.console.error = (...args) => {
     log.error(args.join(', '))
@@ -58,10 +58,17 @@ async function cmdRunner(room_id, cmd, ...args) {
         "invite": async () => {return osu.InvitePlayer(room_id, await ircStyleUsername(args[0]))},
         "lock": () => {return osu.SetLockState(room_id, {locked: true})},
         "unlock": () => {return osu.SetLockState(room_id, {locked: false})},
-        "size": () => {return osu.ChangeRoomSettings(room_id, {max_participants: parseInt(args[0])})},
+        "size": () => {
+            const size = slotLimitArg(parseInt(args[0]))
+            if (size === undefined) return {success: true}
+            return osu.ChangeRoomSettings(room_id, {max_participants: size})
+        },
         "set": () => {
             let size = args[2] ?? args[1] // scoremode doesn't exist yet bleh
-            if (size) size = parseInt(size)
+            if (size) {
+                size = slotLimitArg(parseInt(size))
+                if (size === undefined) return {success: true}
+            }
             return osu.ChangeRoomSettings(room_id, {type: args[0] == 0 ? "head_to_head" : "team_versus", max_participants: size})
         },
         "start": () => {return osu.StartMatch(room_id, {countdown: parseInt(args[0])})},
@@ -424,21 +431,33 @@ async function addScore(room_id, playlist_id) {
 
 function int(id) { return parseInt(document.getElementById(id).value, 10) }
 // womp womp f*ck you servermultiplayerroom for your [2, 16]
+const MIN_SLOTS = 2
 const MAX_SLOTS = 16
-// 0 means unlimited to the server, and [2, MAX_SLOTS] is the real limit for change.
-function clampSlots(n) {
-    if (n <= 0) return 0
-    return Math.min(Math.max(n, 2), MAX_SLOTS)
+function slotsError(n) {
+    if (Number.isNaN(n)) return "Enter a slot count between 2 and 16."
+    if (n < MIN_SLOTS || n > MAX_SLOTS) return `Slot count must be between ${MIN_SLOTS} and ${MAX_SLOTS}.`
+    return null
 }
-function slotLimitNew(id) {
-    const n = int(id)
-    return Number.isNaN(n) ? 0 : clampSlots(n)
-}
-function slotLimitEdit(id) {
-    const n = int(id)
-    return Number.isNaN(n) ? null : clampSlots(n)
+function slotLimitArg(n) {
+    if (n === 0) return 0
+    const err = slotsError(n)
+    if (err) {
+        addSystemMsg(err)
+        return undefined
+    }
+    return n
 }
 function str(id) { return document.getElementById(id).value.trim() }
+
+function bindUnlimitedToggle(button_id, input_id, error_id) {
+    const btn = document.getElementById(button_id)
+    btn.addEventListener('click', () => {
+        setUnlimited(button_id, input_id, error_id, !isUnlimited(button_id))
+    })
+    setUnlimited(button_id, input_id, error_id, isUnlimited(button_id))
+}
+bindUnlimitedToggle('make-room-unlimited', 'make-room-max-participants', 'make-room-slots-error')
+bindUnlimitedToggle('settings-unlimited', 'settings-maximum-participants', 'settings-slots-error')
 
 // ── Add Playlist Modal ───────────────────────────────────────────────────
 const addPlaylistModal = document.getElementById('add-playlist-modal')
@@ -618,11 +637,18 @@ setInterval(updateStatus, 5000)
 
 // ── Room Setup ─────────────────────────────────────────────────────────────
 document.getElementById('make-room-btn').addEventListener('click', async () => {
+    let max_participants = 0
+    if (!isUnlimited('make-room-unlimited')) {
+        max_participants = int('make-room-max-participants')
+        const err = slotsError(max_participants)
+        showSlotsError('make-room-slots-error', err)
+        if (err) return
+    }
     const result = await osu.MakeRoom({
         ruleset_id: int('make-ruleset-id'),
         beatmap_id: int('make-beatmap-id'),
         name: str('make-room-name'),
-        max_participants: slotLimitNew('make-room-max-participants')
+        max_participants: max_participants
     })
     if (result.success && result.data) {
         room = new Room(result.data)
@@ -648,10 +674,23 @@ document.getElementById('change-settings-btn').addEventListener('click', async (
     const settings = {}
     const name = str('settings-name')
     const password = str('settings-password')
-    const max_participants = slotLimitEdit('settings-maximum-participants')
     settings.type = document.getElementsByName("match_type")[0].checked ? "head_to_head" : "team_versus";
-    // null means keep the current limit, so leave the key off entirely
-    if (max_participants != null) settings.max_participants = max_participants
+    // unlimited sends 0, a filled box sends that size, an empty box sends
+    // nothing at all so the room keeps the limit it already has
+    if (isUnlimited('settings-unlimited')) {
+        showSlotsError('settings-slots-error', null)
+        settings.max_participants = 0
+    } else {
+        const max_participants = int('settings-maximum-participants')
+        if (!Number.isNaN(max_participants)) {
+            const err = slotsError(max_participants)
+            showSlotsError('settings-slots-error', err)
+            if (err) return
+            settings.max_participants = max_participants
+        } else {
+            showSlotsError('settings-slots-error', null)
+        }
+    }
     if (name) settings.name = name
     if (password) settings.password = password
     const result = await osu.ChangeRoomSettings(room.id, settings)

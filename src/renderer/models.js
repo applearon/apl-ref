@@ -1,4 +1,4 @@
-import { idFromUsername, osu, GetBeatmap, MODS, addSystemMsg, showToast, confirmUI } from './utils.js'
+import { idFromUsername, osu, GetBeatmap, MODS, addSystemMsg, showToast, confirmUI, setUnlimited } from './utils.js'
 
 function hideRoomActions() {
     document.getElementById('room-actions').classList.add('hidden')
@@ -39,19 +39,9 @@ export class Room {
         this.mode = this.updateMode()
         this.players = {}
         this.refs = {}
-        // Limit = 0 is working but null works better i dont know why they did it like that
-        // i mean really why is ChangeRoomSettingsRequest is nullable but MakeRoomRequest is not
-        // and WHY MakeRoomRequest has a documented range of [2, 256] 
-        // BUT ChangeRoomSettingsRequest HAS A DOCUMENTED RANGE OF [2, 128] 
-        // WHILE THE ServerMultiplayerRoom HAS A DOCUMENTED RANGE OF [2, 16] 
-        // AND IT APPLIES ONLY WHEN YOU DO CHANGE ROOM SETTINGS REQUEST 
-        // BUT NOT WHEN YOU MAKE THE ROOM ITSELF
-
-        // I CAN MAKE A ROOM WITH 255 SLOTS (NOT 256 BECAUSE BYTE OVERFLOWS)
-        // I CAN ***TRY*** TO CHANGE IT TO 128 ONLY BECAUSE DOCUMENTED RANGE
-        // AND GET F*CKING REJECTED BECAUSE SERVER LIMIT OF 16?????
-        // WTF
-        this.max_participants = resp.state.slots?.length ?? null
+        // thank you spaceman 
+        // now it's beautiful
+        this.max_participants = resp.max_participants || null
         // seed the slot list up front: GetUser calls below are async, and
         // updateUI runs before they resolve. null slots to render
         // an empty player list until every user request comes back.
@@ -328,6 +318,7 @@ export class Room {
         document.getElementById('settings-password').value = this.password
         // unlimited shows as a blank field rather than the string "null"
         document.getElementById('settings-maximum-participants').value = this.max_participants ?? ''
+        setUnlimited('settings-unlimited', 'settings-maximum-participants', 'settings-slots-error', this.max_participants == null)
         document.getElementsByName("match_type")[0].checked = this.type == "head_to_head"
         document.getElementsByName("match_type")[1].checked = this.type != "head_to_head"
         
