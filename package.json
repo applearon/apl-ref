@@ -1,6 +1,6 @@
 {
   "name": "apl_ref",
-  "version": "0.7.3",
+  "version": "0.7.4",
   "description": "APL's Ref Client",
   "main": "main.js",
   "scripts": {
@@ -8,7 +8,8 @@
     "make": "electron-forge make",
     "test": "echo \"Error: no test specified\" && exit 1",
     "package": "electron-forge package",
-    "gensources": "node scripts/updateSrc.js"
+    "gensources": "node scripts/updateSrc.js",
+    "css": "tailwindcss -i src/renderer/css/tailwind-input.css -o src/renderer/css/tailwind.css"
   },
   "author": "applearon",
   "license": "MIT",
