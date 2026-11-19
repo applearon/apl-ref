@@ -1,13 +1,11 @@
-import { idFromUsername, osu, GetBeatmap, MODS, showToast, confirmUI, setUnlimited, addSystemMsg, refreshRoomList } from './utils.js'
+import { idFromUsername, osu, GetBeatmap, MODS, showToast, confirmUI, setUnlimited, refreshRoomList } from './utils.js'
 
 function hideRoomActions() {
     document.getElementById('room-actions').classList.add('hidden')
     document.getElementById('room-badge').classList.remove('visible')
-    document.getElementById('room-chat-badge').classList.remove('visible')
     document.getElementById('navbar-room-controls').classList.remove('visible')
 
     document.getElementById('add-referee').classList.remove('visible')
-    document.getElementById('room-chat-id').textContent = ''
     document.getElementById('room-name').textContent = "APL Ref Client"
 }
 
@@ -116,7 +114,6 @@ export class Room {
     showRoomActions() {
         document.getElementById('room-actions').classList.remove('hidden')
         document.getElementById('room-badge').classList.add('visible')
-        document.getElementById('room-chat-badge').classList.add('visible')
         document.getElementById('navbar-room-controls').classList.add('visible')
 
         document.getElementById('add-referee').classList.add('visible')
@@ -128,7 +125,6 @@ export class Room {
                 showToast("Failed to copy. idk what happened")
             }
         })
-        document.getElementById('room-chat-id').textContent = this.chat_channel_id
         document.getElementById('room-name').textContent = this.name
     }
 

@@ -1,7 +1,7 @@
 // ── Theme Toggle ────────────────────────────────────────────────────────────
 
 import { User, Event, EventQueue, Room } from "./models.js"
-import { idFromUsername, osu, logEvent, MODS, addSystemMsg, confirmUI, log, showSlotsError, isUnlimited, setUnlimited, refreshRoomList } from "./utils.js"
+import { idFromUsername, osu, logEvent, MODS, confirmUI, log, showSlotsError, isUnlimited, setUnlimited, refreshRoomList } from "./utils.js"
 
 window.console.error = (...args) => {
     log.error(args.join(', '))
@@ -132,7 +132,6 @@ async function cmdRunner(room_id, cmd, ...args) {
             room = null
             // drop the queue too, otherwise it keeps a stale room id around and
             // events for the next room get matched against the old one
-            Queue = null
 
             delete rooms[id]
             document.getElementById("chat-messages").innerHTML = '<div id="no-messages" class="text-gray-500 dark:text-gray-400 text-sm italic">No messages yet...</div>'
@@ -732,7 +731,6 @@ document.getElementById('close-room-btn').addEventListener('click', async () => 
         room.close()
         // same as on line 107
         room = null
-        Queue = null
     } else {
         console.log("How the hell")
     }
