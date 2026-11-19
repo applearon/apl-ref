@@ -1,5 +1,6 @@
-const { ipcMain } = require('electron')
+const { ipcMain, dialog } = require('electron')
 const { WebSocket } = require('ws')
+const fs = require('fs')
 const { CMDS_SET } = require('../referee/commands')
 const { EVENTS } = require('../referee/events')
 const { version } = require('../../package.json')
@@ -64,6 +65,11 @@ function setupIpcHandlers(getRefereeClient) {
         const logger = getLogger(["apl-ref", "web"]);
         return logger[type]("{text}", {text})
     }))
+    ipcMain.handle('SaveDialog', createQueryHandler(getRefereeClient, (client, title, filename, data) => {
+        const file = dialog.showSaveDialogSync({title:title, defaultPath: filename})
+        if (file == '') throw new Error("Cancelled")
+        return fs.writeFileSync(file, data, 'utf8', {flag: 'wx'})
+    }))
     ipcMain.handle('GetUser', createQueryHandler(getRefereeClient, (client, user_id) => {
         const accessToken = client.accessToken;
         const url = new URL(`https://${OSU_SERVER}/api/v2/users/${user_id}/osu`);
@@ -97,6 +103,20 @@ function setupIpcHandlers(getRefereeClient) {
         }).then(response => response.json())
         //console.log(x)
         return x;
+    }))
+    ipcMain.handle('GetChannelMessages', createQueryHandler(getRefereeClient, (client, channel_id) => {
+        const accessToken = client.accessToken;
+        const url = new URL(`https://${OSU_SERVER}/api/v2/chat/channels/${channel_id}/messages`);
+        const headers = {
+            "Content-Type": "application/json",
+            "Accept": "application/json",
+            Authorization: `Bearer ${accessToken}`,
+        }
+        
+        return fetch(url, {
+            method: "GET",
+            headers,
+        }).then(response => response.json());
     }))
     ipcMain.handle('SendMessage', createQueryHandler(getRefereeClient, (client, channel_id, message) => {
         const accessToken = client.accessToken;

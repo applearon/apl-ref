@@ -15,7 +15,10 @@ class RefereeClient {
         this.sendToRenderer = sendToRenderer
         this.ws_close = ws_close
     }
-
+    setConnected(val) {
+        this.connected = val
+        this.sendToRenderer('connection-update', val)
+    }
     async connect() {
         this.connection = new signalR.HubConnectionBuilder()
             .withUrl(new URL(IS_PROD ? '/referee' : 'signalr/referee', this.url).toString(), {
@@ -26,15 +29,15 @@ class RefereeClient {
             .build()
 
         setupEventHandlers(this.connection, {
-            onClose: () => { this.connected = false },
+            onClose: () => { this.setConnected(false) },
             onReconnecting: this.callbacks.onReconnecting,
-            onReconnected: () => { this.connected = true }
+            onReconnected: () => { this.setConnected(true)}
         }, this.sendToRenderer)
 
 
         try {
             await this.connection.start()
-            this.connected = true
+            this.setConnected(true)
             console.log('Connected to referee server')
         } catch (err) {
             console.error('Failed to connect:', err)
@@ -50,7 +53,7 @@ class RefereeClient {
     async disconnect() {
         if (this.connection) {
             await this.connection.stop()
-            this.connected = false
+            this.setConnected(false)
         }
     }
 }
