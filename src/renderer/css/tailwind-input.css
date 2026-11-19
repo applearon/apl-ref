@@ -503,3 +503,13 @@
 .score.visible {
     display: flex;
 }
+
+input[type="number"]:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+#make-room-unlimited,
+#settings-unlimited {
+  border: 1px solid transparent;
+}
