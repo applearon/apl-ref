@@ -31,7 +31,7 @@ export class Room {
         window.api.api.GetChannelMessages(resp.chat_channel_id).then(x => {
             console.log(x)
             for (let msg of x.data) {
-                this.msg_history.push({type: "chat", data: [msg.content, msg.sender.username, msg.sender.avatar_url], timestamp: msg.timestamp})
+                this.msg_history.push({type: "chat", data: [msg.content, msg.sender.username, msg.sender.avatar_url, msg.timestamp], timestamp: msg.timestamp})
             }
             this.updateUI()
         })
@@ -332,7 +332,8 @@ export class Room {
         this.msg_history.push({type: "system", data: [msg], timestamp: new Date().toISOString()})
         this.updateUI()
     }
-    addChatMsg(msg, username, pfp) {
+    addChatMsg(msg, username, pfp, timestamp) {
+        timestamp = new Date(timestamp).toLocaleTimeString()
         document.getElementById("no-messages")?.remove()
         const template = document.getElementById("chat-message")
         const clone = template.content.cloneNode(true);
@@ -340,6 +341,7 @@ export class Room {
         clone.querySelector('.chat-avatar').src = pfp
         clone.querySelector('.chat-username').textContent = username
         clone.querySelector('.chat-message').textContent = msg
+        clone.querySelector('.chat-timestamp').textContent = timestamp
         
         const chatbox = document.getElementById("chat-messages")
         chatbox.appendChild(clone)

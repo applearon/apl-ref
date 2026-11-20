@@ -815,7 +815,7 @@ window.api.api.onChatMessage(async buffer => {
             console.log(msg.sender_id, msg.content)
             let user = (await room.GetUser(msg.sender_id)).user
             //room.addChatMsg(msg.content, user.username, user.avatar_url)
-            r.msg_history.push({type: "chat", data: [msg.content, user.username, user.avatar_url], timestamp: msg.timestamp})
+            r.msg_history.push({type: "chat", data: [msg.content, user.username, user.avatar_url, msg.timestamp], timestamp: msg.timestamp})
             room.updateUI() // TODO: remove this line
             //if (!commandHandler(user.username, msg.content)) addChatMsg(msg.content, user.username, user.avatar_url)
         }
