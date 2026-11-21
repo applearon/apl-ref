@@ -100,21 +100,22 @@ export async function refreshRoomList() {
     }
 }
 
-let objs = Object.entries(window.api.send)
-let osu = {}
-for (const cmd of objs) {
-    osu[cmd[0]] = (...args) => {
-        const res = cmd[1](...args)
-        logEvent(cmd[0], res)
-        return res
+export const osu = (() => {
+    if (typeof window === "undefined") return {}
+    let out = {}
+    let objs = Object.entries(window.api.send)
+    for (const cmd of objs) {
+        out[cmd[0]] = (...args) => {
+            const res = cmd[1](...args)
+            logEvent(cmd[0], res)
+            return res
+        }
     }
-}
-let MODS;
-fetch('mods.json').then(mod_res => {
-    mod_res.json().then(mods => MODS = mods)
-})
+    return out;
+})()
+export const MODS = await (await fetch('mods.json')).json();
 
-export { osu, MODS, log }
+export { log }
 
 export function showSlotsError(id, msg) {
     const el = document.getElementById(id)
