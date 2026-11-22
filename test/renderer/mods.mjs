@@ -24,7 +24,11 @@ describe("handleModChange", () => {
         {input: [["EZ"], 0], success: true, expected: { required_mods: [{acronym: "EZ"}], allowed_mods: [] }, name: "returns EZ with no settings"},
         {input: [["EZ", "DT"], 0], success: true, expected: { required_mods: [{acronym: "EZ"}, {acronym: "DT"}], allowed_mods: [] }, name: "returns EZDT with spaces"},
         {input: [["EZ+DT"], 0], success: true, expected: { required_mods: [{acronym: "EZ"}, {acronym: "DT"}], allowed_mods: [] }, name: "returns EZDT with \"+\" input"},
-
+        {input: [["DA[1,2,3,4]+NF"], 0], success: true, expected: { required_mods: [{acronym: "DA", settings: {'circle_size': 1, 'drain_rate': 2, 'overall_difficulty': 3, 'approach_rate': 4}}, {acronym: "NF"}], allowed_mods: [] }, name: "DA works with other mods"},
+        {input: [["HR+HD[1,2]"], 0], success: false, expected: { }, name: "fails on invalid settings"},
+        {input: [["DA[1,2]+NF"], 3], success: true, expected: { required_mods: [{acronym: "DA", settings: {'drain_rate': 1, 'overall_difficulty':2, }}, {acronym: "NF"}], allowed_mods: [] }, name: "Mania DA works"},
+        {input: [["DA[1,2,3]+NF"], 1], success: true, expected: { required_mods: [{acronym: "DA", settings: {'drain_rate': 1, 'overall_difficulty': 2, "scroll_speed": 3}}, {acronym: "NF"}], allowed_mods: [] }, name: "Taiko DA works"},
+        {input: [["DA[1,2,3,4,1]+NF"], 2], success: true, expected: { required_mods: [{acronym: "DA", settings: {'circle_size':1, 'drain_rate': 2, 'overall_difficulty':3, 'approach_rate': 4, 'hard_rock_offsets': 1 }}, {acronym: "NF"}], allowed_mods: [] }, name: "CTB DA works"},
 
     ]
     for (const {input, expected, success, name } of testCases) {

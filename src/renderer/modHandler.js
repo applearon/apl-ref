@@ -1,7 +1,13 @@
 import { MODS } from "./utils.js";
 
 export function handleModChange(args, mode) {
-    const DA_ORDER = [0,2,3,1,4]
+    // This stupid filter stuff is because:
+    // We want to match the lazer UI order which is ordered very weirdly? and is not 
+    // matched on the mods.json cause it's some arbitrary variables that are passed around
+    // So, we specify the "true" order here, then filter out the settings that don't exist in
+    // the current ruleset
+    const DA_ORDER = ["circle_size","drain_rate","overall_difficulty", "scroll_speed", "approach_rate","hard_rock_offsets", "extended_limits"]
+        .filter(s => MODS[mode].Mods.find(x => x.Acronym == "DA").Settings.map(x => x.Name).includes(s))
     // "FM" and "NM" also
     if (args.length < 1) {
         console.log("bah youre doing it wrong");
@@ -40,10 +46,10 @@ export function handleModChange(args, mode) {
                     return {success: false, error: "Invalid settings: " + mod + ": too many arguments"}
                 }
                 let req_settings = {}
-                const is_da = mod_acronym == "DA"
+                const is_da = mod_acronym == "DA";
                 for (const [i, s] of settings.entries()) { // TODO: i need to order this god dammit
                     // forced order this is some BS im killing myself idk what else to do
-                    req_settings[mod_setting_names[is_da ? DA_ORDER[i] : i]] = s
+                    req_settings[is_da ? DA_ORDER[i] : mod_setting_names[i]] = s
                 }
                 required_mods.push({acronym: mod_acronym, settings: req_settings})
             } catch {
