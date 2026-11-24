@@ -536,6 +536,11 @@ export class EventQueue {
                     this.room.name = data.name
                     this.room.password = data.password
                     this.room.type = data.type
+                    if (this.room.type == "head_to_head") {
+                        for (const player of Object.values(this.room.players)) {
+                            player.team = "none"
+                        }
+                    }
                     // server reports unlimited as null or 0 depending on
                     // how the room was set up; normalize both to null
                     this.room.max_participants = data.max_participants || null
