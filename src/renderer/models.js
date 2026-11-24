@@ -433,6 +433,12 @@ export class Room {
                 }
             }
         }
+        // Match Control
+        if (this.status == "Playing") {
+            document.getElementById("abort-match-btn").textContent = "Abort Match";
+        } else {
+            document.getElementById("abort-match-btn").textContent = "Cancel Timer";
+        }
     }
     close() {
         document.getElementById("playlist-items").innerHTML = ""
@@ -605,10 +611,6 @@ export class EventQueue {
                     this.room.sendNotification("completed")
                 } break;
                 case "RollCompleted": {
-                // Again i don't love doing UI changes here but
-                // chat stuff is ephemeral rn anyways so
-                // TODO: store chat messages somewhere and also figure out the
-                // flow to get the previous messages
                     let user = await this.room.GetUser(data.user_id)
                     this.room.addSystemMsg(`${user.user.username} rolled ${data.result}/${data.max}`)
                 } break;

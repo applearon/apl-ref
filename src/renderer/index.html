@@ -25,19 +25,26 @@
       </div>
 
       <div class="sidebar-section flex-none">
-        <h3 class="sidebar-title">Match Control</h3>
-        
-        <div class="mb-3">
-          <label class="text-sm text-gray-600 dark:text-gray-400 block mb-1">Countdown seconds (0 = immediate)</label>
-          <input id="start-match-seconds" type="number" value="0" class="w-full border border-gray-300 dark:border-gray-600 rounded px-2 py-1 bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-100 text-sm" />
+        <div class="grid grid-rows-2 gap-1 mb-3">
+            <div>
+                <label class="text-md text-gray-900 dark:text-gray-200">Timer</label>
+                <div class="grid grid-cols-5">
+                    <button id="timer-120" class="rounded-l border-r-2 border-sky-500 dark:border-blue-600 bg-sky-400 hover:bg-sky-500 dark:bg-blue-800 dark:hover:bg-blue-900 text-white py-1.5 text-sm">120s</button>
+                    <button id="timer-90" class="border-r-2 border-sky-500 dark:border-blue-600 bg-sky-400 hover:bg-sky-500 dark:bg-blue-800 dark:hover:bg-blue-900 text-white py-1 text-sm">90s</button>
+                    <button id="timer-60" class="border-r-2 border-sky-500 dark:border-blue-600 bg-sky-400 hover:bg-sky-500 dark:bg-blue-800 dark:hover:bg-blue-900 text-white py-1 text-sm">60s</button>
+                    <button id="stop-countdown-btn" class="col-span-2 rounded-r bg-sky-600 hover:bg-sky-700 dark:bg-blue-400 dark:hover:bg-blue-600 text-white py-1 text-sm">Cancel Timer</button>
+                </div>
+            </div>
+            <div>
+                <label class="text-md text-gray-900 dark:text-gray-200">Start</label>
+                <div class="grid grid-cols-5">
+                    <button id="start-10" class="rounded-l border-r-2 border-sky-500 dark:border-blue-600 bg-sky-400 hover:bg-sky-500 dark:bg-blue-800 dark:hover:bg-blue-900 text-white py-1.5 text-sm">10s</button>
+                    <button id="start-5" class="border-r-2 border-sky-500 dark:border-blue-600 bg-sky-400 hover:bg-sky-500 dark:bg-blue-800 dark:hover:bg-blue-900 text-white py-1 text-sm">5s</button>
+                    <button id="start-0" class="border-r-2 border-sky-500 dark:border-blue-600 bg-sky-400 hover:bg-sky-500 dark:bg-blue-800 dark:hover:bg-blue-900 text-white py-1 text-sm">Now</button>
+                    <button id="abort-match-btn" class="col-span-2 rounded-r bg-rose-500 hover:bg-rose-600 dark:bg-rose-600 dark:hover:bg-rose-700 text-white py-1 text-sm">Cancel Start</button>
+                </div>
+            </div>
         </div>
-        <div class="grid grid-cols-2 gap-2 mb-2">
-          <button id="timer-btn" class="bg-yellow-600 hover:bg-yellow-700 text-white px-3 py-1 rounded text-sm">Start Timer</button>
-          <button id="stop-countdown-btn" class="bg-orange-500 hover:bg-orange-600 text-white px-3 py-1 rounded text-sm">Stop Timer</button>
-
-          <button id="start-match-btn" class="bg-green-600 hover:bg-green-700 text-white px-3 py-1 rounded text-sm">Start Match</button>
-          <button id="abort-match-btn" class="bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded text-sm">Abort Match</button>
-
         </div>
       </div>
     </div>

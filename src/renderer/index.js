@@ -642,23 +642,34 @@ document.getElementById('change-settings-btn').addEventListener('click', async (
 })
 
 // ── Match Control ──────────────────────────────────────────────────────────
-document.getElementById('start-match-btn').addEventListener('click', async () => {
-    const result = await osu.StartMatch(room.id, {
-        'countdown': int('start-match-seconds')
-    })
-})
 
-document.getElementById('timer-btn').addEventListener('click', async () => {
-    room.startTimer(int('start-match-seconds'));
-})
+const timer_times = [120, 90, 60]
+const start_times = [10, 5, 0]
+for (let t of timer_times) {
+    document.getElementById(`timer-${t}`).addEventListener('click', async () => {
+        room.startTimer(t);
+    })
+}
+
+for (let t of start_times) {
+    document.getElementById(`start-${t}`).addEventListener('click', async () => {
+        await osu.StartMatch(room.id, {
+            'countdown': t
+        })
+    })
+}
 
 document.getElementById('stop-countdown-btn').addEventListener('click', async () => {
-    const result = await osu.StopMatchCountdown(room.id)
     room.stopTimer();
 })
 
 document.getElementById('abort-match-btn').addEventListener('click', async () => {
-    const result = await osu.AbortMatch(room.id)
+    console.log(room.status)
+    if (room.status == "Playing") {
+        await osu.AbortMatch(room.id)
+    } else {
+        await osu.StopMatchCountdown(room.id)
+    }
 })
 
 document.getElementById('close-room-btn').addEventListener('click', async () => {
