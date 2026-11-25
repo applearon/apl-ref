@@ -9,7 +9,7 @@ UI fixes:
 
 New Features:
 - Referee Invited popup to join up
-- Notifications/sound effects for when things happen (all ready, map end etc)
+- Notifications + sound effects for when things happen (all ready, map end etc)
 - Add more error handling on the osu api side
 - resize scores or starting size or something to make it not scroll down when scores are added
     - (make it scroll in its own thing?)

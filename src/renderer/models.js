@@ -74,6 +74,7 @@ export class Room {
             })
         }
         this.type = resp.state.type ?? "head_to_head"
+        this.queue_mode = resp.queue_mode ?? "host_only" // why do these all have defaults?
         this.locked = resp.state.locked ?? false
 
         // "playing", "idle", etc
@@ -389,7 +390,10 @@ export class Room {
         setUnlimited('settings-unlimited', 'settings-maximum-participants', 'settings-slots-error', this.max_participants == null)
         document.getElementsByName("match_type")[0].checked = this.type == "head_to_head"
         document.getElementsByName("match_type")[1].checked = this.type != "head_to_head"
-        
+        const queue_modes = ["host_only", "all_players", "all_players_round_robin"];
+        for (let [i, queue_checkbox] of document.getElementsByName("queue_mode").entries()) {
+            queue_checkbox.checked = this.queue_mode == queue_modes[i];
+        }
         // Required Mods
         let cur = Object.values(this.playlistItems).filter(y => y.order == 0)[0];
         const req_mods_div = document.getElementById('req-verbose-mods')
@@ -536,6 +540,7 @@ export class EventQueue {
                     this.room.name = data.name
                     this.room.password = data.password
                     this.room.type = data.type
+                    this.room.queue_mode = data.queue_mode;
                     if (this.room.type == "head_to_head") {
                         for (const player of Object.values(this.room.players)) {
                             player.team = "none"

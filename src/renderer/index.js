@@ -618,6 +618,7 @@ document.getElementById('change-settings-btn').addEventListener('click', async (
     const name = str('settings-name')
     const password = str('settings-password')
     settings.type = document.getElementsByName("match_type")[0].checked ? "head_to_head" : "team_versus";
+    settings.queue_mode = Array.from(document.getElementsByName("queue_mode")).findIndex(cb => cb.checked)
     // unlimited sends 0, a filled box sends that size, an empty box sends
     // nothing at all so the room keeps the limit it already has
     if (isUnlimited('settings-unlimited')) {
