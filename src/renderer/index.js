@@ -481,6 +481,12 @@ document.getElementById('edit-playlist-confirm').addEventListener('click', async
 })
 
 
+// Expand Event Log
+document.getElementById("expand-events").addEventListener('click', () => {
+    document.getElementById("room-rightbar").classList.toggle("grid-rows-[2fr_2fr_3fr]")
+    document.getElementById("room-rightbar").classList.toggle("grid-rows-[5fr_5fr_1fr]")
+})
+
 const invitePlayerModal = document.getElementById('invite-player-modal')
 
 document.getElementById('invite-player-btn').addEventListener('click', () => {

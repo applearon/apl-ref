@@ -50,15 +50,15 @@
     </div>
 
     <!-- Rightbar -->
-    <div id="room-rightbar" class="fixed top-14 right-0 w-[var(--rightbar-width)] h-[calc(100vh-56px)] grid grid-rows-8 bg-gray-200 dark:bg-gray-800 text-gray-800 dark:text-gray-200 border-l border-gray-200">
-      <div class="sidebar-section overflow-y-auto scrollbar-hover row-span-3">
+    <div id="room-rightbar" class="fixed top-14 right-0 w-[var(--rightbar-width)] h-[calc(100vh-56px)] grid grid-rows-[5fr_5fr_1fr] transition-[grid-template-rows] duration-300 bg-gray-200 dark:bg-gray-800 text-gray-800 dark:text-gray-200 border-l border-gray-200">
+      <div class="sidebar-section overflow-y-auto scrollbar-hover">
         <h3 class="sidebar-title">
           Map Queue
           <button id="add-playlist-btn" class="leading-none py-0.5 px-3 ml-2 rounded bg-blue-500 text-white border-none cursor-pointer hover:bg-blue-600">+</button>
         </h3>
         <div id="playlist-items" class="playlist-items"></div>
       </div>
-      <div class="p-4 flex-1 overflow-y-auto padding-16 scrollbar-hover border-t border-gray-300 row-span-3">
+      <div class="p-4 flex-1 overflow-y-auto padding-16 scrollbar-hover border-t border-gray-300">
         <h3 class="sidebar-title">Mod Settings</h3>
         <div class="bg-gray-100 dark:bg-gray-700 p-3 rounded text-sm mb-2" id="req-verbose-mods">
           <div class="mods-user font-semibold text-gray-900 dark:text-gray-50 mb-3">Current Map</div>
@@ -67,8 +67,11 @@
         <div class="" id="mods-verbose-container">
         </div>
       </div>
-      <div class="p-4 flex-2 overflow-y-auto border-t border-gray-300 scrollbar-hover row-span-2">
-          <h3 class="sidebar-title">Events</h3>
+      <div class="p-4 flex-2 overflow-y-auto border-t border-gray-300 scrollbar-hover">
+          <div class="grid grid-cols-2">
+            <h3 class="sidebar-title">Events</h3>
+            <button id="expand-events" class="text-sm justify-self-end cursor-pointer">Expand</button>
+          </div>
           <div class="event-log" id="event-log">
             <div class="event-placeholder">No events yet…</div>
           </div>
